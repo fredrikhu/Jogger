@@ -8,6 +8,7 @@ class MainWindow : public BaseWindow<MainWindow> {
 public:
 	static bool Register(HINSTANCE hInstance);
 	bool Create(HINSTANCE hInstance);
+	bool HandleMessage(MSG& msg);
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:
@@ -21,4 +22,6 @@ private:
 	D2D d2d_;
 
 	HRESULT CreateControls();
+	void OnPaint();
+	void UpdateSuggestions(const std::wstring& text);
 };

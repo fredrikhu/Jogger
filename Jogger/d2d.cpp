@@ -3,33 +3,33 @@
 bool D2D::CreateD2DFactory() {
 	HRESULT hr = D2D1CreateFactory(
 		D2D1_FACTORY_TYPE_SINGLE_THREADED,
-		factory.GetAddressOf()
+		factory_.GetAddressOf()
 	);
 	return SUCCEEDED(hr);
 }
 
 HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
-	if (renderTarget.Get()) return S_OK;
+	if (renderTarget_.Get()) return S_OK;
 
 	RECT rc;
 	GetWindowRect(hwnd, &rc);
 
-	HRESULT hr = factory->CreateHwndRenderTarget(
+	HRESULT hr = factory_->CreateHwndRenderTarget(
 		D2D1::RenderTargetProperties(),
 		D2D1::HwndRenderTargetProperties(
 			hwnd,
 			D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top)
 		),
-		&renderTarget
+		&renderTarget_
 	);
 	if (FAILED(hr)) return hr;
 
-	hr = renderTarget.Get()->CreateSolidColorBrush(
+	hr = renderTarget_.Get()->CreateSolidColorBrush(
 		D2D1::ColorF(0xFFFFFF),
-		backgroundBrush.GetAddressOf()
+		backgroundBrush_.GetAddressOf()
 	);
 	if (FAILED(hr)) {
-		renderTarget.Reset();
+		renderTarget_.Reset();
 		return hr;
 	}
 
@@ -37,6 +37,16 @@ HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
 }
 
 bool D2D::ResizeRenderTarget(UINT width, UINT height) {
-	HRESULT hr = renderTarget.Get()->Resize(D2D1::SizeU(width, height));
+	HRESULT hr = renderTarget_.Get()->Resize(D2D1::SizeU(width, height));
 	return SUCCEEDED(hr);
+}
+
+ComPtr<ID2D1Factory> D2D::Factory() {
+	return factory_;
+}
+ComPtr<ID2D1HwndRenderTarget> D2D::RenderTarget() {
+	return renderTarget_;
+}
+ComPtr<ID2D1SolidColorBrush> D2D::BackgroundBrush() {
+	return backgroundBrush_;
 }

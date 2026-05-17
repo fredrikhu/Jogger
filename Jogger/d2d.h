@@ -16,7 +16,7 @@ public:
 	ComPtr<ID2D1HwndRenderTarget> RenderTarget();
 	ComPtr<ID2D1SolidColorBrush> BackgroundBrush();
 private:
-	ComPtr<ID2D1Factory> factory;
-	ComPtr<ID2D1HwndRenderTarget> renderTarget;
-	ComPtr<ID2D1SolidColorBrush> backgroundBrush;
+	ComPtr<ID2D1Factory> factory_;
+	ComPtr<ID2D1HwndRenderTarget> renderTarget_;
+	ComPtr<ID2D1SolidColorBrush> backgroundBrush_;
 };

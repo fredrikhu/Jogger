@@ -7,9 +7,9 @@ using Microsoft::WRL::ComPtr;
 
 #pragma comment(lib, "Ole32.lib")
 
+// TODO: Return bool
 HRESULT InitializeCom() {
 	const HRESULT comResult = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-	if (FAILED(comResult)) return -1;
 
 	return comResult;
 }
