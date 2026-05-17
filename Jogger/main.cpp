@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <shellapi.h>
 #include "com.h"
+#include "d2d.h"
 
 constexpr wchar_t CLASS_NAME[] = L"MainWindow";
 constexpr int ID_OK = 1001;
@@ -130,6 +131,33 @@ std::wstring GetText(HWND hwnd) {
 	return text;
 }
 
+void OnPaint(HWND hwnd) {
+	PAINTSTRUCT ps;
+	HRESULT hr;
+	D2D1_SIZE_F size;
+	ID2D1HwndRenderTarget* t = nullptr;
+	BeginPaint(hwnd, &ps);
+	if (FAILED(EnsureRenderTarget(hwnd))) goto END_PAINT;
+
+	t = renderTarget.Get();
+	t->BeginDraw();
+	t->Clear(D2D1::ColorF(D2D1::ColorF::Blue));
+	size = t->GetSize();
+	t->DrawRectangle(
+		D2D1::RectF(0.5, 0.5, size.width-0.5f, size.height-0.5f),
+		backgroundBrush.Get()
+	);
+	hr = renderTarget.Get()->EndDraw();
+
+	if (hr == D2DERR_RECREATE_TARGET) {
+		renderTarget.Reset();
+		backgroundBrush.Reset();
+	}
+
+	END_PAINT:
+	EndPaint(hwnd, &ps);
+}
+
 constexpr UINT_PTR ID_EXIT_AFTER_LAUNCH_TIMER = 1;
 LRESULT CALLBACK WindowProc(
 	HWND hwnd,
@@ -139,7 +167,18 @@ LRESULT CALLBACK WindowProc(
 ) {
 	switch (uMsg) {
 	case WM_CREATE:
+		if (!CreateD2DFactory()) return -1;
 		return CreateControls(hwnd);
+	case WM_SIZE: 
+		if (renderTarget.Get()) {
+			const UINT width = LOWORD(lParam);
+			const UINT height = HIWORD(lParam);
+			ResizeRenderTarget(width, height);
+			break;
+		}
+	case WM_PAINT:
+		OnPaint(hwnd);
+		return 0;
 	case WM_COMMAND:
 		if (LOWORD(wParam) == ID_OK && HIWORD(wParam) == BN_CLICKED) {
 			const auto command = GetText(g_mainWindow.edit);
