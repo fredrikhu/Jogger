@@ -1,6 +1,7 @@
 #include <string>
 #include <Windows.h>
 #include <shellapi.h>
+#include "com.h"
 
 constexpr wchar_t CLASS_NAME[] = L"MainWindow";
 constexpr int ID_OK = 1001;
@@ -22,6 +23,8 @@ int APIENTRY WinMain(
 	LPSTR lpCmdLine,
 	int nCmdShow
 ) {
+	if (InitializeCom() == -1) return -1;
+
 	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
 	const WNDCLASSW wc = {
@@ -90,6 +93,7 @@ int APIENTRY WinMain(
 		DispatchMessageW(&msg);
 	}
 
+	UninitializeCom();
 	return static_cast<int>(msg.wParam);
 }
 
@@ -136,6 +140,16 @@ LRESULT CALLBACK WindowProc(
 				ShowWindow(hwnd, SW_HIDE);
 				SetTimer(hwnd, ID_EXIT_AFTER_LAUNCH_TIMER, 250, nullptr);
 			}
+			return 0;
+		}
+		if (LOWORD(wParam) == ID_BROWSE && HIWORD(wParam) == BN_CLICKED) {
+			std::wstring filePath;
+			if (!PickFile(hwnd, filePath)) return 0;
+
+			SetWindowTextW(hwnd, filePath.c_str());
+			SetFocus(g_mainWindow.edit);
+			SendMessageW(g_mainWindow.edit, EM_SETSEL, filePath.size(), filePath.size());
+
 			return 0;
 		}
 		break;

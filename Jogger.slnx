@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="Jogger/Jogger.vcxproj" />
+  <Project Path="Jogger/Jogger.vcxproj" Id="64b23256-dcc9-4e50-97fd-1506c983d90a" />
 </Solution>
