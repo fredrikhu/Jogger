@@ -31,7 +31,7 @@ int APIENTRY WinMain(
 		.lpfnWndProc = WindowProc,
 		.hInstance = hInstance,
 		.hCursor = LoadCursorW(nullptr, IDC_ARROW),
-		.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1),
+		//.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1),
 		.lpszClassName = CLASS_NAME,
 	};
 
@@ -40,6 +40,7 @@ int APIENTRY WinMain(
 	}
 
 	const DWORD windowStyle = 0;
+	const DWORD windowExstyle = WS_EX_LAYERED;
 	const UINT dpi = GetDpiForSystem();
 	RECT rect = { 0, 0, 320, 72 };
 	AdjustWindowRectExForDpi(
@@ -51,7 +52,7 @@ int APIENTRY WinMain(
 	);
 
 	const HWND hwnd = CreateWindowExW(
-		0,
+		windowExstyle,
 		CLASS_NAME,
 		L"Learn to Program Windows",
 		windowStyle,
@@ -67,6 +68,13 @@ int APIENTRY WinMain(
 		return -1;
 	}
 	SetWindowLongW(hwnd, GWL_STYLE, windowStyle);
+	SetLayeredWindowAttributes(hwnd, 0, 200, LWA_ALPHA);
+	SetWindowPos(
+		hwnd,
+		NULL,
+		0, 0, 0, 0,
+		SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
+	);
 
 	ShowWindow(hwnd, nCmdShow);
 
