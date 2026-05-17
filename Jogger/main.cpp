@@ -1,19 +1,28 @@
 #include <string>
 #include <Windows.h>
 #include <shellapi.h>
+#include <vector>
 #include "com.h"
 #include "d2d.h"
 
 constexpr wchar_t CLASS_NAME[] = L"MainWindow";
+constexpr wchar_t SUGGESTION_LIST_CLASS[] = L"SuggestionList";
 constexpr int ID_OK = 1001;
 constexpr int ID_EDIT = 1002;
 constexpr int ID_BROWSE = 1003;
+constexpr int ID_SUGGESTIONS = 1004;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK SuggestionListProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 struct MainWindowState {
 	HWND edit = nullptr;
 	HWND okButton = nullptr;
 	HWND browseButton = nullptr;
+	HWND suggestionList = nullptr;
+
+	int hoveredIndex = -1;
+	int selectedIndex = 0;
+	std::vector<std::wstring> suggestions;
 };
 
 MainWindowState g_mainWindow{};
@@ -35,8 +44,17 @@ int APIENTRY WinMain(
 		//.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1),
 		.lpszClassName = CLASS_NAME,
 	};
-
 	if (!RegisterClassW(&wc)) {
+		return -1;
+	}
+
+	const WNDCLASSW suggestionClass = {
+		.lpfnWndProc = SuggestionListProc,
+		.hInstance = hInstance,
+		.hCursor = LoadCursorW(nullptr, IDC_ARROW),
+		.lpszClassName = SUGGESTION_LIST_CLASS,
+	};
+	if (!RegisterClassW(&suggestionClass)) {
 		return -1;
 	}
 
@@ -78,6 +96,10 @@ int APIENTRY WinMain(
 	);
 
 	ShowWindow(hwnd, nCmdShow);
+
+	g_mainWindow.suggestions.push_back(L"notepad");
+	g_mainWindow.suggestions.push_back(L"calc");
+	g_mainWindow.suggestions.push_back(L"explorer");
 
 	MSG msg = {};
 	while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
@@ -158,6 +180,23 @@ void OnPaint(HWND hwnd) {
 	EndPaint(hwnd, &ps);
 }
 
+void UpdateSuggestions(const std::wstring& text) {
+
+}
+
+LRESULT CALLBACK SuggestionListProc(
+	HWND hwnd,
+	UINT uMsg,
+	WPARAM wParam,
+	LPARAM lParam
+) {
+	switch (uMsg) {
+	case WM_PAINT:
+		return 0;
+	}
+	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+}
+
 constexpr UINT_PTR ID_EXIT_AFTER_LAUNCH_TIMER = 1;
 LRESULT CALLBACK WindowProc(
 	HWND hwnd,
@@ -198,6 +237,11 @@ LRESULT CALLBACK WindowProc(
 			SendMessageW(g_mainWindow.edit, EM_SETSEL, filePath.size(), filePath.size());
 
 			return 0;
+		}
+		if (LOWORD(wParam) == ID_EDIT && HIWORD(wParam) == EN_CHANGE) {
+			const auto query = GetText(g_mainWindow.edit);
+			UpdateSuggestions(query);
+			InvalidateRect(g_mainWindow.suggestionList, nullptr, true);
 		}
 		break;
 	case WM_TIMER:
@@ -257,6 +301,18 @@ LRESULT CreateControls(HWND hwnd) {
 		nullptr
 	);
 	if (!g_mainWindow.browseButton) return -1;
+	g_mainWindow.suggestionList = CreateWindowExW(
+		0,
+		L"SuggestionList",
+		nullptr,
+		WS_CHILD | WS_VISIBLE,
+		10, 72, 300, 120,
+		hwnd,
+		ControlId(ID_SUGGESTIONS),
+		hInstance,
+		nullptr
+	);
+	if (!g_mainWindow.suggestionList) return -1;
 
 	return 0;
 }
