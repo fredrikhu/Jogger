@@ -142,10 +142,14 @@
     <ClCompile Include="com.cpp" />
     <ClCompile Include="d2d.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MainWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="com.h" />
     <ClInclude Include="d2d.h" />
+    <ClInclude Include="MainWindow.h" />
+    <ClInclude Include="misc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

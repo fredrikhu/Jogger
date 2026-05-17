@@ -1,10 +1,6 @@
 #include "d2d.h"
 
-ComPtr<ID2D1Factory> factory = nullptr;
-ComPtr<ID2D1HwndRenderTarget> renderTarget = nullptr;
-ComPtr<ID2D1SolidColorBrush> backgroundBrush = nullptr;
-
-bool CreateD2DFactory() {
+bool D2D::CreateD2DFactory() {
 	HRESULT hr = D2D1CreateFactory(
 		D2D1_FACTORY_TYPE_SINGLE_THREADED,
 		factory.GetAddressOf()
@@ -12,7 +8,7 @@ bool CreateD2DFactory() {
 	return SUCCEEDED(hr);
 }
 
-HRESULT EnsureRenderTarget(HWND hwnd) {
+HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
 	if (renderTarget.Get()) return S_OK;
 
 	RECT rc;
@@ -40,7 +36,7 @@ HRESULT EnsureRenderTarget(HWND hwnd) {
 	return S_OK;
 }
 
-bool ResizeRenderTarget(UINT width, UINT height) {
+bool D2D::ResizeRenderTarget(UINT width, UINT height) {
 	HRESULT hr = renderTarget.Get()->Resize(D2D1::SizeU(width, height));
 	return SUCCEEDED(hr);
 }
