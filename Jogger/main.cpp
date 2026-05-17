@@ -10,7 +10,6 @@ constexpr wchar_t SUGGESTION_LIST_CLASS[] = L"SuggestionList";
 constexpr int ID_OK = 1001;
 constexpr int ID_EDIT = 1002;
 constexpr int ID_BROWSE = 1003;
-constexpr int ID_SUGGESTIONS = 1004;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK SuggestionListProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -22,7 +21,13 @@ struct MainWindowState {
 
 	int hoveredIndex = -1;
 	int selectedIndex = 0;
-	std::vector<std::wstring> suggestions;
+	std::vector<std::wstring> visibleSuggestions;
+};
+
+std::vector<std::wstring> allSuggestions{
+	L"notepad",
+	L"calc",
+	L"explorer"
 };
 
 MainWindowState g_mainWindow{};
@@ -52,6 +57,7 @@ int APIENTRY WinMain(
 		.lpfnWndProc = SuggestionListProc,
 		.hInstance = hInstance,
 		.hCursor = LoadCursorW(nullptr, IDC_ARROW),
+		.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1),
 		.lpszClassName = SUGGESTION_LIST_CLASS,
 	};
 	if (!RegisterClassW(&suggestionClass)) {
@@ -96,10 +102,6 @@ int APIENTRY WinMain(
 	);
 
 	ShowWindow(hwnd, nCmdShow);
-
-	g_mainWindow.suggestions.push_back(L"notepad");
-	g_mainWindow.suggestions.push_back(L"calc");
-	g_mainWindow.suggestions.push_back(L"explorer");
 
 	MSG msg = {};
 	while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
@@ -181,7 +183,13 @@ void OnPaint(HWND hwnd) {
 }
 
 void UpdateSuggestions(const std::wstring& text) {
-
+	g_mainWindow.visibleSuggestions.clear();
+	if (text.length() == 0) return;
+	for (const auto s : allSuggestions) {
+		if (s.starts_with(text)) {
+			g_mainWindow.visibleSuggestions.push_back(s);
+		}
+	}
 }
 
 LRESULT CALLBACK SuggestionListProc(
@@ -190,10 +198,10 @@ LRESULT CALLBACK SuggestionListProc(
 	WPARAM wParam,
 	LPARAM lParam
 ) {
-	switch (uMsg) {
+	/*switch (uMsg) {
 	case WM_PAINT:
 		return 0;
-	}
+	}*/
 	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
 
@@ -213,8 +221,8 @@ LRESULT CALLBACK WindowProc(
 			const UINT width = LOWORD(lParam);
 			const UINT height = HIWORD(lParam);
 			ResizeRenderTarget(width, height);
-			break;
 		}
+		break;
 	case WM_PAINT:
 		OnPaint(hwnd);
 		return 0;
@@ -232,7 +240,7 @@ LRESULT CALLBACK WindowProc(
 			std::wstring filePath;
 			if (!PickFile(hwnd, filePath)) return 0;
 
-			SetWindowTextW(hwnd, filePath.c_str());
+			SetWindowTextW(g_mainWindow.edit, filePath.c_str());
 			SetFocus(g_mainWindow.edit);
 			SendMessageW(g_mainWindow.edit, EM_SETSEL, filePath.size(), filePath.size());
 
@@ -241,9 +249,38 @@ LRESULT CALLBACK WindowProc(
 		if (LOWORD(wParam) == ID_EDIT && HIWORD(wParam) == EN_CHANGE) {
 			const auto query = GetText(g_mainWindow.edit);
 			UpdateSuggestions(query);
-			InvalidateRect(g_mainWindow.suggestionList, nullptr, true);
+			const bool shouldShow = !g_mainWindow.visibleSuggestions.empty();
+			const bool isShowing = IsWindowVisible(g_mainWindow.suggestionList);
+			if (shouldShow && !isShowing) {
+				RECT rc{};
+				GetWindowRect(g_mainWindow.edit, &rc);
+				SetWindowPos(
+					g_mainWindow.suggestionList, nullptr,
+					rc.left, rc.bottom,
+					0, 0,
+					SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW
+				);
+			}
+			if (!shouldShow && isShowing) {
+				ShowWindow(g_mainWindow.suggestionList, SW_HIDE);
+			}
+			return 0;
 		}
 		break;
+	case WM_MOVE: {
+		const bool isShowing = IsWindowVisible(g_mainWindow.suggestionList);
+		if (isShowing) {
+			RECT rc{};
+			GetWindowRect(g_mainWindow.edit, &rc);
+			SetWindowPos(
+				g_mainWindow.suggestionList, nullptr,
+				rc.left, rc.bottom,
+				0, 0,
+				SWP_NOSIZE | SWP_NOACTIVATE
+			);
+		}
+		return 0;
+	}
 	case WM_TIMER:
 		if (wParam == ID_EXIT_AFTER_LAUNCH_TIMER) {
 			KillTimer(hwnd, ID_EXIT_AFTER_LAUNCH_TIMER);
@@ -252,6 +289,10 @@ LRESULT CALLBACK WindowProc(
 		}
 		break;
 	case WM_DESTROY:
+		if (g_mainWindow.suggestionList) {
+			DestroyWindow(g_mainWindow.suggestionList);
+			g_mainWindow.suggestionList = nullptr;
+		}
 		PostQuitMessage(0);
 		return 0;
 	}
@@ -302,17 +343,24 @@ LRESULT CreateControls(HWND hwnd) {
 	);
 	if (!g_mainWindow.browseButton) return -1;
 	g_mainWindow.suggestionList = CreateWindowExW(
-		0,
+		WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_LAYERED,
 		L"SuggestionList",
 		nullptr,
-		WS_CHILD | WS_VISIBLE,
-		10, 72, 300, 120,
+		WS_POPUP,
+		10, 34, 300, 120,
 		hwnd,
-		ControlId(ID_SUGGESTIONS),
+		nullptr,
 		hInstance,
 		nullptr
 	);
 	if (!g_mainWindow.suggestionList) return -1;
+	SetLayeredWindowAttributes(g_mainWindow.suggestionList, 0, 200, LWA_ALPHA);
+	SetWindowPos(
+		g_mainWindow.suggestionList,
+		NULL,
+		0, 0, 0, 0,
+		SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
+	);
 
 	return 0;
 }
