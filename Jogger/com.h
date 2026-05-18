@@ -1,5 +1,6 @@
 #pragma once
 #include <Windows.h>
+#include <string>
 
 HRESULT InitializeCom();
 void UninitializeCom();

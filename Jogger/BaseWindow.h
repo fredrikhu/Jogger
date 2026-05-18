@@ -17,7 +17,6 @@ public:
 		ShowWindow(hwnd_, SW_HIDE);
 	}
 	void Destroy() {
-		assert(hwnd_);
 		if (!hwnd_)  return;
 		DestroyWindow(hwnd_);
 		hwnd_ = nullptr;

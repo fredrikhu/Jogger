@@ -1,7 +1,8 @@
+#include "com.h"
+
 #include <string>
 #include <ShObjIdl.h>
 #include <wrl/client.h>
-#include "com.h"
 
 using Microsoft::WRL::ComPtr;
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "BaseWindow.h"
+#include "SuggestionList.h"
 #include "d2d.h"
 #include <string>
 #include <vector>
@@ -12,11 +13,12 @@ public:
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:
+	SuggestionList suggestionList_;
+
 	HINSTANCE hInstance_ = nullptr;
-	HWND edit = nullptr;
-	HWND okButton = nullptr;
-	HWND browseButton = nullptr;
-	HWND suggestionList = nullptr;
+	HWND edit_ = nullptr;
+	HWND okButton_ = nullptr;
+	HWND browseButton_ = nullptr;
 	std::vector<std::wstring> visibleSuggestions_;
 
 	D2D d2d_;

@@ -41,7 +41,7 @@ bool MainWindow::Create(HINSTANCE hInstance) {
 		nullptr,
 		nullptr,
 		hInstance,
-		nullptr
+		this
 	);
 	if (hwnd == nullptr) {
 		return false;
@@ -58,6 +58,8 @@ bool MainWindow::Create(HINSTANCE hInstance) {
 		SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
 	);
 
+	result &= static_cast<BOOL>(suggestionList_.Create(hInstance, hwnd_));
+
 	return result;
 }
 
@@ -68,11 +70,12 @@ bool MainWindow::Register(HINSTANCE hInstance) {
 		.hCursor = LoadCursorW(nullptr, IDC_ARROW),
 		.lpszClassName = CLASS_NAME,
 	};
-	if (RegisterClassW(&wc)) {
-		return true;
+	BOOL success = true;
+	if (!RegisterClassW(&wc) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) {
+		return false;
 	}
 
-	return GetLastError() == ERROR_CLASS_ALREADY_EXISTS;
+	return SuggestionList::Register(hInstance);
 }
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -92,7 +95,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		return 0;
 	case WM_COMMAND:
 		if (LOWORD(wParam) == ID_OK && HIWORD(wParam) == BN_CLICKED) {
-			const auto command = GetText(edit);
+			const auto command = GetText(edit_);
 
 			if (LaunchWithShell(hwnd_, command)) {
 				ShowWindow(hwnd_, SW_HIDE);
@@ -104,40 +107,40 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			std::wstring filePath;
 			if (!PickFile(hwnd_, filePath)) return 0;
 
-			SetWindowTextW(edit, filePath.c_str());
-			SetFocus(edit);
-			SendMessageW(edit, EM_SETSEL, filePath.size(), filePath.size());
+			SetWindowTextW(edit_, filePath.c_str());
+			SetFocus(edit_);
+			SendMessageW(edit_, EM_SETSEL, filePath.size(), filePath.size());
 
 			return 0;
 		}
 		if (LOWORD(wParam) == ID_EDIT && HIWORD(wParam) == EN_CHANGE) {
-			const auto query = GetText(edit);
+			const auto query = GetText(edit_);
 			UpdateSuggestions(query);
 			const bool shouldShow = !visibleSuggestions_.empty();
-			const bool isShowing = IsWindowVisible(suggestionList);
+			const bool isShowing = IsWindowVisible(suggestionList_.Window());
 			if (shouldShow && !isShowing) {
 				RECT rc{};
-				GetWindowRect(edit, &rc);
+				GetWindowRect(edit_, &rc);
 				SetWindowPos(
-					suggestionList, nullptr,
+					suggestionList_.Window(), nullptr,
 					rc.left, rc.bottom,
 					0, 0,
 					SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW
 				);
 			}
 			if (!shouldShow && isShowing) {
-				ShowWindow(suggestionList, SW_HIDE);
+				ShowWindow(suggestionList_.Window(), SW_HIDE);
 			}
 			return 0;
 		}
 		break;
 	case WM_MOVE: {
-		const bool isShowing = IsWindowVisible(suggestionList);
+		const bool isShowing = IsWindowVisible(suggestionList_.Window());
 		if (isShowing) {
 			RECT rc{};
-			GetWindowRect(edit, &rc);
+			GetWindowRect(edit_, &rc);
 			SetWindowPos(
-				suggestionList, nullptr,
+				suggestionList_.Window(), nullptr,
 				rc.left, rc.bottom,
 				0, 0,
 				SWP_NOSIZE | SWP_NOACTIVATE
@@ -148,15 +151,12 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_TIMER:
 		if (wParam == ID_EXIT_AFTER_LAUNCH_TIMER) {
 			KillTimer(hwnd_, ID_EXIT_AFTER_LAUNCH_TIMER);
-			DestroyWindow(hwnd_);
+			Destroy();
 			return 0;
 		}
 		break;
 	case WM_DESTROY:
-		if (suggestionList) {
-			DestroyWindow(suggestionList);
-			suggestionList = nullptr;
-		}
+		suggestionList_.Destroy();
 		PostQuitMessage(0);
 		return 0;
 	}
@@ -164,12 +164,12 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 }
 
 bool MainWindow::HandleMessage(MSG& msg) {
-	if (msg.message == WM_KEYDOWN && msg.wParam == VK_RETURN && (msg.hwnd == edit)) {
+	if (msg.message == WM_KEYDOWN && msg.wParam == VK_RETURN && (msg.hwnd == edit_)) {
 		SendMessageW(
 			hwnd_,
 			WM_COMMAND,
 			MAKEWPARAM(ID_OK, BN_CLICKED),
-			reinterpret_cast<LPARAM>(okButton)
+			reinterpret_cast<LPARAM>(okButton_)
 		);
 		return true;
 	}
@@ -184,7 +184,7 @@ bool MainWindow::HandleMessage(MSG& msg) {
 }
 
 HRESULT MainWindow::CreateControls() {
-	edit = CreateWindowExW(
+	edit_ = CreateWindowExW(
 		0,
 		L"EDIT",
 		L"",
@@ -195,9 +195,9 @@ HRESULT MainWindow::CreateControls() {
 		hInstance_,
 		nullptr
 	);
-	if (!edit) return -1;
-	SetFocus(edit);
-	okButton = CreateWindowEx(
+	if (!edit_) return -1;
+	SetFocus(edit_);
+	okButton_ = CreateWindowEx(
 		0,
 		L"BUTTON",
 		L"Ok",
@@ -208,8 +208,8 @@ HRESULT MainWindow::CreateControls() {
 		hInstance_,
 		nullptr
 	);
-	if (!okButton) return -1;
-	browseButton = CreateWindowEx(
+	if (!okButton_) return -1;
+	browseButton_ = CreateWindowEx(
 		0,
 		L"BUTTON",
 		L"Browse...",
@@ -220,26 +220,7 @@ HRESULT MainWindow::CreateControls() {
 		hInstance_,
 		nullptr
 	);
-	if (!browseButton) return -1;
-	suggestionList = CreateWindowExW(
-		WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_LAYERED,
-		L"SuggestionList",
-		nullptr,
-		WS_POPUP,
-		10, 34, 300, 120,
-		hwnd_,
-		nullptr,
-		hInstance_,
-		nullptr
-	);
-	if (!suggestionList) return -1;
-	SetLayeredWindowAttributes(suggestionList, 0, 200, LWA_ALPHA);
-	SetWindowPos(
-		suggestionList,
-		NULL,
-		0, 0, 0, 0,
-		SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
-	);
+	if (!browseButton_) return -1;
 
 	return 0;
 }

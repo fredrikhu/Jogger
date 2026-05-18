@@ -1,14 +1,11 @@
-#include <string>
 #include <Windows.h>
 #include <shellapi.h>
+#include <string>
 #include <vector>
 #include "com.h"
 #include "d2d.h"
 #include "MainWindow.h"
-
-constexpr wchar_t SUGGESTION_LIST_CLASS[] = L"SuggestionList";
-
-LRESULT CALLBACK SuggestionListProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+#include "SuggestionList.h"
 
 int APIENTRY WinMain(
 	HINSTANCE hInstance,
@@ -24,17 +21,6 @@ int APIENTRY WinMain(
 	MainWindow mainWindow{};
 	mainWindow.Create(hInstance);
 
-	const WNDCLASSW suggestionClass = {
-		.lpfnWndProc = SuggestionListProc,
-		.hInstance = hInstance,
-		.hCursor = LoadCursorW(nullptr, IDC_ARROW),
-		.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1),
-		.lpszClassName = SUGGESTION_LIST_CLASS,
-	};
-	if (!RegisterClassW(&suggestionClass)) {
-		return -1;
-	}
-
 	mainWindow.Show(SW_SHOW);
 
 	MSG msg = {};
@@ -48,17 +34,3 @@ int APIENTRY WinMain(
 	UninitializeCom();
 	return static_cast<int>(msg.wParam);
 }
-
-LRESULT CALLBACK SuggestionListProc(
-	HWND hwnd,
-	UINT uMsg,
-	WPARAM wParam,
-	LPARAM lParam
-) {
-	/*switch (uMsg) {
-	case WM_PAINT:
-		return 0;
-	}*/
-	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
-}
-
