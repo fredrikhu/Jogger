@@ -8,7 +8,7 @@ using Microsoft::WRL::ComPtr;
 
 class D2D {
 public:
-	bool CreateD2DFactory();
+	static bool CreateD2DFactory();
 	HRESULT EnsureRenderTarget(HWND hwnd);
 	bool ResizeRenderTarget(UINT width, UINT height);
 

@@ -12,7 +12,9 @@ int APIENTRY WinMain(
 	LPSTR lpCmdLine,
 	int nCmdShow
 ) {
-	if (FAILED(InitializeCom())) return -1;
+	ComInitializer initializer{};
+	if (!initializer.IsInitialized()) return -1;
+	if (!D2D::CreateD2DFactory()) return -1;
 
 	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
@@ -30,6 +32,5 @@ int APIENTRY WinMain(
 		DispatchMessageW(&msg);
 	}
 
-	UninitializeCom();
 	return static_cast<int>(msg.wParam);
 }

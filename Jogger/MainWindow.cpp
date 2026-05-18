@@ -72,7 +72,6 @@ bool MainWindow::Register(HINSTANCE hInstance) {
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_CREATE:
-		if (!d2d_.CreateD2DFactory()) return -1;
 		return CreateControls();
 	case WM_SIZE:
 		if (d2d_.RenderTarget().Get()) {

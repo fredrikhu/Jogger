@@ -8,15 +8,18 @@ using Microsoft::WRL::ComPtr;
 
 #pragma comment(lib, "Ole32.lib")
 
-// TODO: Return bool
-HRESULT InitializeCom() {
+ComInitializer::ComInitializer() {
 	const HRESULT comResult = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-
-	return comResult;
+	isInitialized_ = SUCCEEDED(comResult);
 }
 
-void UninitializeCom() {
+ComInitializer::~ComInitializer() {
+	isInitialized_ = false;
 	CoUninitialize();
+}
+
+bool ComInitializer::IsInitialized() {
+	return isInitialized_;
 }
 
 bool PickFile(HWND owner, std::wstring& path) {

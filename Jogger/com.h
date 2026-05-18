@@ -2,6 +2,13 @@
 #include <Windows.h>
 #include <string>
 
-HRESULT InitializeCom();
-void UninitializeCom();
+class ComInitializer {
+public:
+	ComInitializer();
+	~ComInitializer();
+	bool IsInitialized();
+private:
+	bool isInitialized_;
+};
+
 bool PickFile(HWND owner, std::wstring& path);
