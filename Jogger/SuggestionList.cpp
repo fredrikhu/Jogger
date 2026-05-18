@@ -2,6 +2,12 @@
 
 constexpr wchar_t SUGGESTION_LIST_CLASS[] = L"SuggestionList";
 
+std::vector<std::wstring> allSuggestions{
+	L"notepad",
+	L"calc",
+	L"explorer"
+};
+
 bool SuggestionList::Register(HINSTANCE hInstance) {
 	const WNDCLASSW suggestionClass = {
 	.lpfnWndProc = BaseWindow<SuggestionList>::WindowProc,
@@ -51,3 +57,36 @@ bool SuggestionList::Create(HINSTANCE hInstance, HWND owner) {
 
 	return result;
  }
+
+void SuggestionList::PositionBelow(HWND hwnd) {
+	RECT rc{};
+	GetWindowRect(hwnd, &rc);
+	SetWindowPos(
+		hwnd_, nullptr,
+		rc.left, rc.bottom,
+		0, 0,
+		SWP_NOSIZE | SWP_NOACTIVATE
+	);
+}
+
+void SuggestionList::ShowBelow(HWND hwnd) {
+	RECT rc{};
+	GetWindowRect(hwnd, &rc);
+	SetWindowPos(
+		hwnd_, nullptr,
+		rc.left, rc.bottom,
+		0, 0,
+		SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW
+	);
+}
+
+bool SuggestionList::UpdateSuggestions(const std::wstring& text) {
+	if (text.length() == 0) return false;
+	visibleSuggestions_.clear();
+	for (const auto s : allSuggestions) {
+		if (s.starts_with(text)) {
+			visibleSuggestions_.push_back(s);
+		}
+	}
+	return !visibleSuggestions_.empty();
+}

@@ -9,12 +9,6 @@ constexpr int ID_OK = 1001;
 constexpr int ID_EDIT = 1002;
 constexpr int ID_BROWSE = 1003;
 
-std::vector<std::wstring> allSuggestions{
-	L"notepad",
-	L"calc",
-	L"explorer"
-};
-
 bool MainWindow::Create(HINSTANCE hInstance) {
 	hInstance_ = hInstance;
 
@@ -58,8 +52,6 @@ bool MainWindow::Create(HINSTANCE hInstance) {
 		SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
 	);
 
-	result &= static_cast<BOOL>(suggestionList_.Create(hInstance, hwnd_));
-
 	return result;
 }
 
@@ -70,7 +62,6 @@ bool MainWindow::Register(HINSTANCE hInstance) {
 		.hCursor = LoadCursorW(nullptr, IDC_ARROW),
 		.lpszClassName = CLASS_NAME,
 	};
-	BOOL success = true;
 	if (!RegisterClassW(&wc) && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) {
 		return false;
 	}
@@ -115,21 +106,13 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		}
 		if (LOWORD(wParam) == ID_EDIT && HIWORD(wParam) == EN_CHANGE) {
 			const auto query = GetText(edit_);
-			UpdateSuggestions(query);
-			const bool shouldShow = !visibleSuggestions_.empty();
+			const bool shouldShow = suggestionList_.UpdateSuggestions(query);
 			const bool isShowing = IsWindowVisible(suggestionList_.Window());
 			if (shouldShow && !isShowing) {
-				RECT rc{};
-				GetWindowRect(edit_, &rc);
-				SetWindowPos(
-					suggestionList_.Window(), nullptr,
-					rc.left, rc.bottom,
-					0, 0,
-					SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW
-				);
+				suggestionList_.ShowBelow(edit_);
 			}
 			if (!shouldShow && isShowing) {
-				ShowWindow(suggestionList_.Window(), SW_HIDE);
+				suggestionList_.Hide();
 			}
 			return 0;
 		}
@@ -137,14 +120,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_MOVE: {
 		const bool isShowing = IsWindowVisible(suggestionList_.Window());
 		if (isShowing) {
-			RECT rc{};
-			GetWindowRect(edit_, &rc);
-			SetWindowPos(
-				suggestionList_.Window(), nullptr,
-				rc.left, rc.bottom,
-				0, 0,
-				SWP_NOSIZE | SWP_NOACTIVATE
-			);
+			suggestionList_.PositionBelow(edit_);
 		}
 		return 0;
 	}
@@ -221,6 +197,7 @@ HRESULT MainWindow::CreateControls() {
 		nullptr
 	);
 	if (!browseButton_) return -1;
+	if (!suggestionList_.Create(hInstance_, hwnd_)) return -1;
 
 	return 0;
 }
@@ -253,13 +230,3 @@ END_PAINT:
 	EndPaint(hwnd_, &ps);
 }
 
-
-void MainWindow::UpdateSuggestions(const std::wstring& text) {
-	visibleSuggestions_.clear();
-	if (text.length() == 0) return;
-	for (const auto s : allSuggestions) {
-		if (s.starts_with(text)) {
-			visibleSuggestions_.push_back(s);
-		}
-	}
-}

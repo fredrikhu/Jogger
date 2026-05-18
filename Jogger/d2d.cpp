@@ -1,5 +1,7 @@
 #include "d2d.h"
 
+ComPtr<ID2D1Factory> D2D::factory_;
+
 bool D2D::CreateD2DFactory() {
 	HRESULT hr = D2D1CreateFactory(
 		D2D1_FACTORY_TYPE_SINGLE_THREADED,

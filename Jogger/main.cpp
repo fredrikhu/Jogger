@@ -5,7 +5,6 @@
 #include "com.h"
 #include "d2d.h"
 #include "MainWindow.h"
-#include "SuggestionList.h"
 
 int APIENTRY WinMain(
 	HINSTANCE hInstance,

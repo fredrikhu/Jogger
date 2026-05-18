@@ -19,7 +19,6 @@ private:
 	HWND edit_ = nullptr;
 	HWND okButton_ = nullptr;
 	HWND browseButton_ = nullptr;
-	std::vector<std::wstring> visibleSuggestions_;
 
 	D2D d2d_;
 
