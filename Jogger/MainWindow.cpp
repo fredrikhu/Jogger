@@ -203,29 +203,14 @@ HRESULT MainWindow::CreateControls() {
 
 
 void MainWindow::OnPaint() {
-	PAINTSTRUCT ps;
-	HRESULT hr;
-	D2D1_SIZE_F size;
-	ID2D1HwndRenderTarget* t = nullptr;
-	BeginPaint(hwnd_, &ps);
-	if (FAILED(d2d_.EnsureRenderTarget(hwnd_))) goto END_PAINT;
+	PaintSession pss(hwnd_, d2d_);
+	if (pss.Failed()) return;
 
-	t = d2d_.RenderTarget().Get();
-	t->BeginDraw();
+	auto t = pss.RenderTarget();
 	t->Clear(D2D1::ColorF(D2D1::ColorF::Blue));
-	size = t->GetSize();
+	auto size = t->GetSize();
 	t->DrawRectangle(
 		D2D1::RectF(0.5, 0.5, size.width - 0.5f, size.height - 0.5f),
 		d2d_.BackgroundBrush().Get()
 	);
-	hr = t->EndDraw();
-
-	if (hr == D2DERR_RECREATE_TARGET) {
-		d2d_.RenderTarget().Reset();
-		d2d_.BackgroundBrush().Reset();
-	}
-
-END_PAINT:
-	EndPaint(hwnd_, &ps);
 }
-

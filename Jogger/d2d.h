@@ -12,6 +12,8 @@ public:
 	HRESULT EnsureRenderTarget(HWND hwnd);
 	bool ResizeRenderTarget(UINT width, UINT height);
 
+	
+
 	static ComPtr<ID2D1Factory> Factory();
 	ComPtr<ID2D1HwndRenderTarget> RenderTarget();
 	ComPtr<ID2D1SolidColorBrush> BackgroundBrush();

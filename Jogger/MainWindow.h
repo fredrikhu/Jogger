@@ -1,7 +1,6 @@
 #pragma once
 #include "BaseWindow.h"
 #include "SuggestionList.h"
-#include "d2d.h"
 #include <string>
 #include <vector>
 
@@ -19,8 +18,6 @@ private:
 	HWND edit_ = nullptr;
 	HWND okButton_ = nullptr;
 	HWND browseButton_ = nullptr;
-
-	D2D d2d_;
 
 	HRESULT CreateControls();
 	void OnPaint();
