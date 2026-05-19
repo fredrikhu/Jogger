@@ -73,13 +73,12 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_CREATE:
 		return CreateControls();
-	case WM_SIZE:
-		if (d2d_.RenderTarget().Get()) {
-			const UINT width = LOWORD(lParam);
-			const UINT height = HIWORD(lParam);
-			d2d_.ResizeRenderTarget(width, height);
-		}
+	case WM_SIZE: {
+		const UINT width = LOWORD(lParam);
+		const UINT height = HIWORD(lParam);
+		d2d_.ResizeRenderTarget(width, height);
 		break;
+	}
 	case WM_PAINT:
 		OnPaint();
 		return 0;
@@ -203,11 +202,11 @@ HRESULT MainWindow::CreateControls() {
 
 
 void MainWindow::OnPaint() {
-	PaintSession pss(hwnd_, d2d_);
+	auto pss = BeginPaint();
 	ID2D1HwndRenderTarget* t;
 	if (!(t = pss.RenderTarget())) return;
 
-	t->Clear(D2D1::ColorF(D2D1::ColorF::Blue));
+	t->Clear(D2D1::ColorF(D2D1::ColorF(0.118f, 0.118f, 0.118f)));
 	auto size = t->GetSize();
 	t->DrawRectangle(
 		D2D1::RectF(0.5, 0.5, size.width - 0.5f, size.height - 0.5f),

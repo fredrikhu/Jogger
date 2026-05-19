@@ -10,11 +10,10 @@ class D2D {
 public:
 	static bool CreateD2DFactory();
 	HRESULT EnsureRenderTarget(HWND hwnd);
-	bool ResizeRenderTarget(UINT width, UINT height);
-
-	
+	void ResizeRenderTarget(UINT width, UINT height);
 
 	static ComPtr<ID2D1Factory> Factory();
+	void ResetRenderTarget();
 	ComPtr<ID2D1HwndRenderTarget> RenderTarget();
 	ComPtr<ID2D1SolidColorBrush> BackgroundBrush();
 private:

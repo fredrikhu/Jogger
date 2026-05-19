@@ -38,9 +38,10 @@ HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
 	return S_OK;
 }
 
-bool D2D::ResizeRenderTarget(UINT width, UINT height) {
-	HRESULT hr = renderTarget_.Get()->Resize(D2D1::SizeU(width, height));
-	return SUCCEEDED(hr);
+void D2D::ResizeRenderTarget(UINT width, UINT height) {
+	if (!renderTarget_.Get()) return;
+
+	renderTarget_.Get()->Resize(D2D1::SizeU(width, height));
 }
 
 ComPtr<ID2D1Factory> D2D::Factory() {
@@ -51,4 +52,9 @@ ComPtr<ID2D1HwndRenderTarget> D2D::RenderTarget() {
 }
 ComPtr<ID2D1SolidColorBrush> D2D::BackgroundBrush() {
 	return backgroundBrush_;
+}
+
+void D2D::ResetRenderTarget() {
+	renderTarget_.Reset();
+	backgroundBrush_.Reset();
 }
