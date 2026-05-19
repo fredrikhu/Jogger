@@ -1,6 +1,7 @@
 #include "SuggestionList.h"
 
 constexpr wchar_t SUGGESTION_LIST_CLASS[] = L"SuggestionList";
+constexpr int lineHeight = 24;
 
 std::vector<std::wstring> allSuggestions{
 	L"notepad",
@@ -24,11 +25,48 @@ bool SuggestionList::Register(HINSTANCE hInstance) {
 }
 
 LRESULT SuggestionList::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	/*switch (uMsg) {
+	switch (uMsg) {
 	case WM_PAINT:
+		OnPaint();
 		return 0;
-	}*/
+	case WM_SIZE: {
+		const UINT width = LOWORD(lParam);
+		const UINT height = HIWORD(lParam);
+		d2d_.ResizeRenderTarget(width, height);
+		return 0;
+	}
+	}
 	return DefWindowProcW(hwnd_, uMsg, wParam, lParam);
+}
+
+void SuggestionList::OnPaint() {
+	auto pss = BeginPaint();
+	ID2D1HwndRenderTarget* t;
+	if (!(t = pss.RenderTarget())) return;
+
+	t->Clear(D2D1::ColorF(D2D1::ColorF(0.118f, 0.118f, 0.118f)));
+	auto size = t->GetSize();
+	t->DrawRectangle(
+		D2D1::RectF(0.5, 0.5, size.width - 0.5f, size.height - 0.5f),
+		d2d_.AccentBrush().Get()
+	);
+	int offset = 0;
+	for (auto s : visibleSuggestions_) {
+		const FLOAT pos = lineHeight * (offset++);
+		D2D1_RECT_F rect{
+			.left = 8,
+			.top = pos,
+			.right = 300-16,
+			.bottom = pos + lineHeight,
+		};
+		t->DrawTextW(
+			s.c_str(),
+			static_cast<UINT32>(s.size()),
+			d2d_.TextFormat(),
+			rect,
+			d2d_.TextBrush().Get()
+		);
+	}
 }
 
 bool SuggestionList::Create(HINSTANCE hInstance, HWND owner) {
@@ -46,8 +84,10 @@ bool SuggestionList::Create(HINSTANCE hInstance, HWND owner) {
 		this
 	);
 	if (!hwnd_) return false;
+
 	BOOL result = true;
-	result &= SetLayeredWindowAttributes(hwnd_, 0, 200, LWA_ALPHA);
+
+	result &= SetLayeredWindowAttributes(hwnd_, 0, 255, LWA_ALPHA);
 	result &= SetWindowPos(
 		hwnd_,
 		NULL,
@@ -80,13 +120,25 @@ void SuggestionList::ShowBelow(HWND hwnd) {
 	);
 }
 
-bool SuggestionList::UpdateSuggestions(const std::wstring& text) {
+bool SuggestionList::UpdateSuggestions(const std::wstring& text, HWND hwnd) {
 	if (text.length() == 0) return false;
 	visibleSuggestions_.clear();
 	for (const auto s : allSuggestions) {
-		if (s.starts_with(text)) {
+		if (s.contains(text)) {
 			visibleSuggestions_.push_back(s);
 		}
 	}
+	RECT rc{};
+	GetWindowRect(hwnd, &rc);
+	SetWindowPos(
+		hwnd_,
+		nullptr,
+		rc.left, rc.bottom, rc.right - rc.left, CalculateHeight(),
+		SWP_NOREPOSITION | SWP_NOACTIVATE
+	);
 	return !visibleSuggestions_.empty();
+}
+
+int SuggestionList::CalculateHeight() {
+	return visibleSuggestions_.size() * lineHeight;
 }

@@ -44,7 +44,7 @@ bool MainWindow::Create(HINSTANCE hInstance) {
 	BOOL result = true;
 
 	result &= SetWindowLongW(hwnd, GWL_STYLE, windowStyle) != 0;
-	result &= SetLayeredWindowAttributes(hwnd, 0, 200, LWA_ALPHA);
+	result &= SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
 	result &= SetWindowPos(
 		hwnd,
 		NULL,
@@ -104,13 +104,16 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		}
 		if (LOWORD(wParam) == ID_EDIT && HIWORD(wParam) == EN_CHANGE) {
 			const auto query = GetText(edit_);
-			const bool shouldShow = suggestionList_.UpdateSuggestions(query);
+			const bool shouldShow = suggestionList_.UpdateSuggestions(query, edit_);
 			const bool isShowing = IsWindowVisible(suggestionList_.Window());
 			if (shouldShow && !isShowing) {
 				suggestionList_.ShowBelow(edit_);
 			}
 			if (!shouldShow && isShowing) {
 				suggestionList_.Hide();
+			}
+			if (shouldShow) {
+				SendMessageW(suggestionList_.Window(), WM_PAINT, 0, 0);
 			}
 			return 0;
 		}
@@ -210,6 +213,6 @@ void MainWindow::OnPaint() {
 	auto size = t->GetSize();
 	t->DrawRectangle(
 		D2D1::RectF(0.5, 0.5, size.width - 0.5f, size.height - 0.5f),
-		d2d_.BackgroundBrush().Get()
+		d2d_.AccentBrush().Get()
 	);
 }

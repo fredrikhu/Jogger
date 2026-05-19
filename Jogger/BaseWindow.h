@@ -12,13 +12,13 @@ public:
 		renderTarget_->BeginDraw();
 	}
 	~PaintSession() {
-		::EndPaint(hwnd_, &ps);
-		if (!renderTarget_) return;
-
-		HRESULT hr = renderTarget_->EndDraw();
-		if (hr == D2DERR_RECREATE_TARGET) {
-			d2d_.ResetRenderTarget();
+		if (renderTarget_) {
+			HRESULT hr = renderTarget_->EndDraw();
+			if (hr == D2DERR_RECREATE_TARGET) {
+				d2d_.ResetRenderTarget();
+			}
 		}
+		::EndPaint(hwnd_, &ps);
 	}
 	PaintSession(const PaintSession&) = delete;
 	PaintSession& operator=(const PaintSession&) = delete;

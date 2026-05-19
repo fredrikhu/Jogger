@@ -10,8 +10,11 @@ public:
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void ShowBelow(HWND hwnd);
 	void PositionBelow(HWND hwnd);
-	bool UpdateSuggestions(const std::wstring& text);
+	bool UpdateSuggestions(const std::wstring& text, HWND hwnd);
 private:
+	void OnPaint();
+	int CalculateHeight();
+
 	HINSTANCE hInstance_ = nullptr;
 	std::vector<std::wstring> visibleSuggestions_;
 };

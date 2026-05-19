@@ -4,13 +4,34 @@
 #pragma comment(lib, "Dwmapi.lib")
 
 ComPtr<ID2D1Factory> D2D::factory_;
+ComPtr<IDWriteFactory> D2D::writeFactory_;
+ComPtr<IDWriteTextFormat> D2D::textFormat_;
 
 bool D2D::CreateD2DFactory() {
-	HRESULT hr = D2D1CreateFactory(
+	bool success = SUCCEEDED(D2D1CreateFactory(
 		D2D1_FACTORY_TYPE_SINGLE_THREADED,
 		factory_.GetAddressOf()
-	);
-	return SUCCEEDED(hr);
+	));
+	success &= SUCCEEDED(DWriteCreateFactory(
+		DWRITE_FACTORY_TYPE_SHARED,
+		__uuidof(IDWriteFactory),
+		reinterpret_cast<IUnknown**>(writeFactory_.GetAddressOf())
+	));
+	success &= SUCCEEDED(writeFactory_->CreateTextFormat(
+		L"Segoe UI",                 // font family
+		nullptr,                     // font collection
+		DWRITE_FONT_WEIGHT_NORMAL,
+		DWRITE_FONT_STYLE_NORMAL,
+		DWRITE_FONT_STRETCH_NORMAL,
+		14.0f,                       // font size in DIPs
+		L"",                         // locale
+		textFormat_.GetAddressOf()
+	));
+	return success;
+}
+
+IDWriteTextFormat* D2D::TextFormat() {
+	return textFormat_.Get();
 }
 
 D2D1_COLOR_F GetAccentColorF() {
@@ -33,7 +54,7 @@ HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
 	if (renderTarget_.Get()) return S_OK;
 
 	RECT rc;
-	GetWindowRect(hwnd, &rc);
+	GetClientRect(hwnd, &rc);
 
 	HRESULT hr = factory_->CreateHwndRenderTarget(
 		D2D1::RenderTargetProperties(),
@@ -45,9 +66,14 @@ HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
 	);
 	if (FAILED(hr)) return hr;
 
+	// TODO: Recreate when accent color changes (WM_DWMCOLORIZATIONCOLORCHANGED)
 	hr = renderTarget_.Get()->CreateSolidColorBrush(
 		GetAccentColorF(),
-		backgroundBrush_.GetAddressOf()
+		accentBrush_.GetAddressOf()
+	);
+	hr = renderTarget_.Get()->CreateSolidColorBrush(
+		D2D1::ColorF(0.95f, 0.95f, 0.95f),
+		textBrush_.GetAddressOf()
 	);
 	if (FAILED(hr)) {
 		renderTarget_.Reset();
@@ -69,11 +95,15 @@ ComPtr<ID2D1Factory> D2D::Factory() {
 ComPtr<ID2D1HwndRenderTarget> D2D::RenderTarget() {
 	return renderTarget_;
 }
-ComPtr<ID2D1SolidColorBrush> D2D::BackgroundBrush() {
-	return backgroundBrush_;
+ComPtr<ID2D1SolidColorBrush> D2D::AccentBrush() {
+	return accentBrush_;
+}
+ComPtr<ID2D1SolidColorBrush> D2D::TextBrush() {
+	return textBrush_;
 }
 
 void D2D::ResetRenderTarget() {
 	renderTarget_.Reset();
-	backgroundBrush_.Reset();
+	accentBrush_.Reset();
+	textBrush_.Reset();
 }
