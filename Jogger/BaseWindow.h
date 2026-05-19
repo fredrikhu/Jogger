@@ -76,9 +76,6 @@ public:
 	ID2D1HwndRenderTarget* RenderTarget() {
 		return renderTarget_;
 	}
-	bool Failed() {
-		return renderTarget_ == nullptr;
-	}
 private:
 	PAINTSTRUCT ps;
 	HWND hwnd_;

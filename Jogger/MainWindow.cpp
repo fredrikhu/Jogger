@@ -204,9 +204,9 @@ HRESULT MainWindow::CreateControls() {
 
 void MainWindow::OnPaint() {
 	PaintSession pss(hwnd_, d2d_);
-	if (pss.Failed()) return;
+	ID2D1HwndRenderTarget* t;
+	if (!(t = pss.RenderTarget())) return;
 
-	auto t = pss.RenderTarget();
 	t->Clear(D2D1::ColorF(D2D1::ColorF::Blue));
 	auto size = t->GetSize();
 	t->DrawRectangle(
