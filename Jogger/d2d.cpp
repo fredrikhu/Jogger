@@ -1,4 +1,7 @@
 #include "d2d.h"
+#include <dwmapi.h>
+
+#pragma comment(lib, "Dwmapi.lib")
 
 ComPtr<ID2D1Factory> D2D::factory_;
 
@@ -8,6 +11,22 @@ bool D2D::CreateD2DFactory() {
 		factory_.GetAddressOf()
 	);
 	return SUCCEEDED(hr);
+}
+
+D2D1_COLOR_F GetAccentColorF() {
+	DWORD color = 0;
+	BOOL opaqueBlend = FALSE;
+
+	if (FAILED(DwmGetColorizationColor(&color, &opaqueBlend))) {
+		return D2D1::ColorF(0.0f, 0.47f, 0.84f);
+	}
+
+	return D2D1::ColorF(
+		((color >> 16) & 0xff) / 255.0f,
+		((color >> 8) & 0xff) / 255.0f,
+		(color & 0xff) / 255.0f,
+		((color >> 24) & 0xff) / 255.0f
+	);
 }
 
 HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
@@ -27,7 +46,7 @@ HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
 	if (FAILED(hr)) return hr;
 
 	hr = renderTarget_.Get()->CreateSolidColorBrush(
-		D2D1::ColorF(0xFFFFFF),
+		GetAccentColorF(),
 		backgroundBrush_.GetAddressOf()
 	);
 	if (FAILED(hr)) {
