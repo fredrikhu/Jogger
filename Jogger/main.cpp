@@ -5,6 +5,7 @@
 #include "com.h"
 #include "d2d.h"
 #include "MainWindow.h"
+#include "DpiScaler.h"
 
 int APIENTRY WinMain(
 	HINSTANCE hInstance,
@@ -17,6 +18,7 @@ int APIENTRY WinMain(
 	if (!D2D::CreateD2DFactory()) return -1;
 
 	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+	DpiScaler::Initialize();
 
 	MainWindow::Register(hInstance);
 	MainWindow mainWindow{};

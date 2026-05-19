@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "misc.h"
 #include "com.h"
+#include "DpiScaler.h"
 
 constexpr wchar_t CLASS_NAME[] = L"MainWindow";
 constexpr UINT_PTR ID_EXIT_AFTER_LAUNCH_TIMER = 1;
@@ -15,7 +16,7 @@ bool MainWindow::Create(HINSTANCE hInstance) {
 	const DWORD windowStyle = 0;
 	const DWORD windowExstyle = WS_EX_LAYERED;
 	const UINT dpi = GetDpiForSystem();
-	RECT rect = { 0, 0, 320, 72 };
+	RECT rect = DpiScaler::Scale({ 0, 0, 320, 72 });
 	AdjustWindowRectExForDpi(
 		&rect,
 		windowStyle,
@@ -161,12 +162,13 @@ bool MainWindow::HandleMessage(MSG& msg) {
 }
 
 HRESULT MainWindow::CreateControls() {
+	RECT rect = DpiScaler::Scale({10, 10, 300, 24});
 	edit_ = CreateWindowExW(
 		0,
 		L"EDIT",
 		L"",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER | ES_AUTOHSCROLL,
-		10, 10, 300, 24,
+		rect.left, rect.top, rect.right, rect.bottom,
 		hwnd_,
 		ControlId(ID_EDIT),
 		hInstance_,
@@ -174,30 +176,35 @@ HRESULT MainWindow::CreateControls() {
 	);
 	if (!edit_) return -1;
 	SetFocus(edit_);
+	DpiScaler::SetScaledFont(edit_);
+	rect = DpiScaler::Scale({ 260, 39, 50, 28 });
 	okButton_ = CreateWindowEx(
 		0,
 		L"BUTTON",
 		L"Ok",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
-		260, 39, 50, 28,
+		rect.left, rect.top, rect.right, rect.bottom,
 		hwnd_,
 		ControlId(ID_OK),
 		hInstance_,
 		nullptr
 	);
 	if (!okButton_) return -1;
+	DpiScaler::SetScaledFont(okButton_);
+	rect = DpiScaler::Scale({ 155, 39, 100, 28 });
 	browseButton_ = CreateWindowEx(
 		0,
 		L"BUTTON",
 		L"Browse...",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP,
-		155, 39, 100, 28,
+		rect.left, rect.top, rect.right, rect.bottom,
 		hwnd_,
 		ControlId(ID_BROWSE),
 		hInstance_,
 		nullptr
 	);
 	if (!browseButton_) return -1;
+	DpiScaler::SetScaledFont(browseButton_);
 	if (!suggestionList_.Create(hInstance_, hwnd_)) return -1;
 
 	return 0;

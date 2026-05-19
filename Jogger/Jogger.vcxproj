@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClCompile Include="com.cpp" />
     <ClCompile Include="d2d.cpp" />
+    <ClCompile Include="DpiScaler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="SuggestionList.cpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="com.h" />
     <ClInclude Include="d2d.h" />
+    <ClInclude Include="DpiScaler.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="misc.h" />
     <ClInclude Include="SuggestionList.h" />
