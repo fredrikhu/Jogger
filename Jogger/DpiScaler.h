@@ -28,6 +28,9 @@ public:
 	static void SetScaledFont(HWND hwnd) {
 		SendMessage(hwnd, WM_SETFONT, (WPARAM)font_, TRUE);
 	}
+	static float ScaleFontSize(float fontSize) {
+		return fontSize * dpi_ / 72.0f;
+	}
 private:
 	static const UINT DefaultDpi = 96;
 	static UINT dpi_;

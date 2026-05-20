@@ -1,11 +1,14 @@
-#include "d2d.h"
 #include <dwmapi.h>
+#include "d2d.h"
+#include "DpiScaler.h"
+#include <string>
 
 #pragma comment(lib, "Dwmapi.lib")
 
 ComPtr<ID2D1Factory> D2D::factory_;
 ComPtr<IDWriteFactory> D2D::writeFactory_;
 ComPtr<IDWriteTextFormat> D2D::textFormat_;
+DWRITE_FONT_METRICS D2D::fontMetrics_;
 
 bool D2D::CreateD2DFactory() {
 	HRESULT hr = D2D1CreateFactory(
@@ -20,16 +23,43 @@ bool D2D::CreateD2DFactory() {
 	);
 	if (FAILED(hr)) return false;
 	hr = writeFactory_->CreateTextFormat(
-		L"Segoe UI",                 // font family
-		nullptr,                     // font collection
+		L"Segoe UI",                    // font family
+		nullptr,                        // font collection
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
 		DWRITE_FONT_STRETCH_NORMAL,
-		14.0f,                       // font size in DIPs
-		L"",                         // locale
+		DpiScaler::ScaleFontSize(9.0f), // font size in DIPs
+		L"",                            // locale
 		textFormat_.GetAddressOf()
 	);
 	if (FAILED(hr)) return false;
+	IDWriteFontCollection* fontCollection;
+	hr = writeFactory_->GetSystemFontCollection(&fontCollection);
+	if (FAILED(hr)) return false;
+	UINT32 nameLength = textFormat_.Get()->GetFontFamilyNameLength();
+	std::wstring familyName(nameLength + 1, L'\0');
+	hr = textFormat_.Get()->GetFontFamilyName(familyName.data(), familyName.size());
+	if (FAILED(hr)) return false;
+	UINT32 index;
+	BOOL exists;
+	hr = fontCollection->FindFamilyName(familyName.c_str(), &index, &exists);
+	if (FAILED(hr) || !exists) return false;
+	IDWriteFontFamily* fontFamily;
+	fontCollection->GetFontFamily(index, &fontFamily);
+	if (FAILED(hr)) return false;
+	IDWriteFont* font;
+	hr = fontFamily->GetFirstMatchingFont(
+		DWRITE_FONT_WEIGHT_NORMAL,
+		DWRITE_FONT_STRETCH_NORMAL,
+		DWRITE_FONT_STYLE_NORMAL,
+		&font
+	);
+	if (FAILED(hr)) return false;
+	ComPtr<IDWriteFontFace> face;
+	font->CreateFontFace(&face);
+	if (FAILED(hr)) return false;
+	face->GetMetrics(&fontMetrics_);
+
 	return true;
 }
 
@@ -114,4 +144,8 @@ void D2D::ResetRenderTarget() {
 	renderTarget_.Reset();
 	accentBrush_.Reset();
 	textBrush_.Reset();
+}
+
+DWRITE_FONT_METRICS D2D::FontMetrics() {
+	return fontMetrics_;
 }

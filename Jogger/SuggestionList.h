@@ -14,6 +14,7 @@ public:
 private:
 	void OnPaint();
 	int CalculateHeight();
+	static const FLOAT verticalPadding;
 
 	HINSTANCE hInstance_ = nullptr;
 	std::vector<std::wstring> visibleSuggestions_;

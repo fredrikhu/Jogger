@@ -13,12 +13,13 @@ int APIENTRY WinMain(
 	LPSTR lpCmdLine,
 	int nCmdShow
 ) {
+	DpiScaler::Initialize();
+
 	ComInitializer initializer{};
 	if (!initializer.IsInitialized()) return -1;
 	if (!D2D::CreateD2DFactory()) return -1;
 
 	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-	DpiScaler::Initialize();
 
 	if (!MainWindow::Register(hInstance)) return -1;
 	MainWindow mainWindow{};

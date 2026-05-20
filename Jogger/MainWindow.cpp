@@ -114,7 +114,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				suggestionList_.Hide();
 			}
 			if (shouldShow) {
-				SendMessageW(suggestionList_.Window(), WM_PAINT, 0, 0);
+				InvalidateRect(suggestionList_.Window(), nullptr, FALSE);
 			}
 			return 0;
 		}

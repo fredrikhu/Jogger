@@ -17,6 +17,7 @@ public:
 
 	static ComPtr<ID2D1Factory> Factory();
 	static IDWriteTextFormat* TextFormat();
+	static DWRITE_FONT_METRICS FontMetrics();
 	void ResetRenderTarget();
 	ComPtr<ID2D1HwndRenderTarget> RenderTarget();
 	ComPtr<ID2D1SolidColorBrush> AccentBrush();
@@ -25,6 +26,7 @@ private:
 	static ComPtr<ID2D1Factory> factory_;
 	static ComPtr<IDWriteFactory> writeFactory_;
 	static ComPtr<IDWriteTextFormat> textFormat_;
+	static DWRITE_FONT_METRICS fontMetrics_;
 	ComPtr<ID2D1HwndRenderTarget> renderTarget_;
 	ComPtr<ID2D1SolidColorBrush> accentBrush_;
 	ComPtr<ID2D1SolidColorBrush> textBrush_;

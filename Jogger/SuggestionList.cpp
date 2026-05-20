@@ -1,7 +1,8 @@
 #include "SuggestionList.h"
+#include "DpiScaler.h"
 
 constexpr wchar_t SUGGESTION_LIST_CLASS[] = L"SuggestionList";
-constexpr int lineHeight = 24;
+const FLOAT SuggestionList::verticalPadding = 4.0f;
 
 std::vector<std::wstring> allSuggestions{
 	L"notepad",
@@ -51,7 +52,10 @@ void SuggestionList::OnPaint() {
 		d2d_.AccentBrush().Get()
 	);
 	int offset = 0;
-	for (auto s : visibleSuggestions_) {
+	for (auto& s : visibleSuggestions_) {
+		auto metrics = d2d_.FontMetrics();
+		const FLOAT lineHeight = (metrics.ascent + metrics.descent + metrics.lineGap)
+			* DpiScaler::ScaleFontSize(9.0) / metrics.designUnitsPerEm + DpiScaler::Scale(verticalPadding);
 		const FLOAT pos = lineHeight * (offset++);
 		D2D1_RECT_F rect{
 			.left = 8,
@@ -121,8 +125,8 @@ void SuggestionList::ShowBelow(HWND hwnd) {
 }
 
 bool SuggestionList::UpdateSuggestions(const std::wstring& text, HWND hwnd) {
-	if (text.length() == 0) return false;
 	visibleSuggestions_.clear();
+	if (text.length() == 0) return false;
 	for (const auto s : allSuggestions) {
 		if (s.contains(text)) {
 			visibleSuggestions_.push_back(s);
@@ -140,5 +144,8 @@ bool SuggestionList::UpdateSuggestions(const std::wstring& text, HWND hwnd) {
 }
 
 int SuggestionList::CalculateHeight() {
+	auto metrics = d2d_.FontMetrics();
+	const FLOAT lineHeight = (metrics.ascent + metrics.descent + metrics.lineGap)
+		* DpiScaler::ScaleFontSize(9.0) / metrics.designUnitsPerEm + DpiScaler::Scale(verticalPadding);
 	return visibleSuggestions_.size() * lineHeight;
 }
