@@ -14,6 +14,7 @@ ComInitializer::ComInitializer() {
 }
 
 ComInitializer::~ComInitializer() {
+	if (!isInitialized_) return;
 	isInitialized_ = false;
 	CoUninitialize();
 }

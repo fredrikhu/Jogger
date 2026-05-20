@@ -8,16 +8,18 @@ ComPtr<IDWriteFactory> D2D::writeFactory_;
 ComPtr<IDWriteTextFormat> D2D::textFormat_;
 
 bool D2D::CreateD2DFactory() {
-	bool success = SUCCEEDED(D2D1CreateFactory(
+	HRESULT hr = D2D1CreateFactory(
 		D2D1_FACTORY_TYPE_SINGLE_THREADED,
 		factory_.GetAddressOf()
-	));
-	success &= SUCCEEDED(DWriteCreateFactory(
+	);
+	if (FAILED(hr)) return false;
+	hr = DWriteCreateFactory(
 		DWRITE_FACTORY_TYPE_SHARED,
 		__uuidof(IDWriteFactory),
 		reinterpret_cast<IUnknown**>(writeFactory_.GetAddressOf())
-	));
-	success &= SUCCEEDED(writeFactory_->CreateTextFormat(
+	);
+	if (FAILED(hr)) return false;
+	hr = writeFactory_->CreateTextFormat(
 		L"Segoe UI",                 // font family
 		nullptr,                     // font collection
 		DWRITE_FONT_WEIGHT_NORMAL,
@@ -26,8 +28,9 @@ bool D2D::CreateD2DFactory() {
 		14.0f,                       // font size in DIPs
 		L"",                         // locale
 		textFormat_.GetAddressOf()
-	));
-	return success;
+	);
+	if (FAILED(hr)) return false;
+	return true;
 }
 
 IDWriteTextFormat* D2D::TextFormat() {
@@ -71,11 +74,16 @@ HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
 		GetAccentColorF(),
 		accentBrush_.GetAddressOf()
 	);
+	if (FAILED(hr)) {
+		renderTarget_.Reset();
+		return hr;
+	}
 	hr = renderTarget_.Get()->CreateSolidColorBrush(
 		D2D1::ColorF(0.95f, 0.95f, 0.95f),
 		textBrush_.GetAddressOf()
 	);
 	if (FAILED(hr)) {
+		textBrush_.Reset();
 		renderTarget_.Reset();
 		return hr;
 	}

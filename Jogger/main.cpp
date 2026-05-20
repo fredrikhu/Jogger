@@ -20,9 +20,9 @@ int APIENTRY WinMain(
 	SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 	DpiScaler::Initialize();
 
-	MainWindow::Register(hInstance);
+	if (!MainWindow::Register(hInstance)) return -1;
 	MainWindow mainWindow{};
-	mainWindow.Create(hInstance);
+	if (!mainWindow.Create(hInstance)) return -1;
 
 	mainWindow.Show(SW_SHOW);
 
