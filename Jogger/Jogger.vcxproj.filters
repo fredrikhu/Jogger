@@ -30,6 +30,9 @@
     <ClCompile Include="SuggestionList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DpiScaler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="com.h">
@@ -48,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SuggestionList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DpiScaler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

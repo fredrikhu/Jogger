@@ -17,7 +17,7 @@ private:
 	DpiScaler scaler_;
 
 	D2D1::ColorF backgroundColor_ = D2D1::ColorF(0.118f, 0.118f, 0.118f);
-	HBRUSH backgroundBrush_;
+	HBRUSH backgroundBrush_ = nullptr;
 	HINSTANCE hInstance_ = nullptr;
 	HWND edit_ = nullptr;
 	HWND okButton_ = nullptr;

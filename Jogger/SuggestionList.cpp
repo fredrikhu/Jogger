@@ -6,7 +6,9 @@ const FLOAT SuggestionList::verticalPadding = 4.0f;
 std::vector<std::wstring> allSuggestions{
 	L"notepad",
 	L"calc",
-	L"explorer"
+	L"explorer",
+	L"totalcommander",
+	L"edge"
 };
 
 bool SuggestionList::RegisterWindowClass(HINSTANCE hInstance) {
@@ -33,8 +35,13 @@ LRESULT SuggestionList::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		const UINT width = LOWORD(lParam);
 		const UINT height = HIWORD(lParam);
 		d2d_.ResizeRenderTarget(width, height);
+		InvalidateRect(hwnd_, nullptr, FALSE);
 		return 0;
 	}
+	case WM_SHOWWINDOW:
+		Reposition();
+		Resize();
+		break;
 	}
 	return DefWindowProcW(hwnd_, uMsg, wParam, lParam);
 }
@@ -44,18 +51,18 @@ void SuggestionList::OnPaint() {
 	ID2D1HwndRenderTarget* t;
 	if (!(t = pss.RenderTarget())) return;
 
-	t->Clear(D2D1::ColorF(D2D1::ColorF(0.118f, 0.118f, 0.118f)));
+	t->Clear(D2D1::ColorF(0.118f, 0.118f, 0.118f));
 	auto size = t->GetSize();
 	t->DrawRectangle(
 		D2D1::RectF(0.5, 0.5, size.width - 0.5f, size.height - 0.5f),
 		d2d_.AccentBrush().Get()
 	);
+
 	int offset = 0;
+	const FLOAT lineHeight = LineHeightDips();
+
 	for (auto& s : visibleSuggestions_) {
-		auto metrics = d2d_.FontMetrics();
-		const FLOAT lineHeight = (metrics.ascent + metrics.descent + metrics.lineGap)
-			* scaler_.ScaleFontSize(9.0f) / metrics.designUnitsPerEm + scaler_.Scale(verticalPadding);
-		const FLOAT pos = lineHeight * (offset++);
+		const FLOAT pos = lineHeight * (offset++) + verticalPadding / 2.0f;
 		D2D1_RECT_F rect{
 			.left = 8,
 			.top = pos,
@@ -70,6 +77,37 @@ void SuggestionList::OnPaint() {
 			d2d_.TextBrush().Get()
 		);
 	}
+}
+
+FLOAT SuggestionList::LineHeightDips() {
+	auto metrics = d2d_.FontMetrics();
+	const FLOAT fontSizeDips = 9.0f * 96.0f / 72.0f;
+	return (metrics.ascent + metrics.descent)
+		* fontSizeDips / metrics.designUnitsPerEm + verticalPadding;
+}
+
+void SuggestionList::Reposition() {
+	RECT rc{};
+	GetWindowRect(attachedTo_, &rc);
+	SetWindowPos(
+		hwnd_, nullptr,
+		rc.left, rc.bottom,
+		0, 0,
+		SWP_NOSIZE | SWP_NOACTIVATE
+	);
+}
+
+void SuggestionList::Resize() {
+	RECT rc{};
+	GetWindowRect(attachedTo_, &rc);
+	SetWindowPos(
+		hwnd_,
+		nullptr,
+		rc.left, rc.bottom,
+		rc.right - rc.left, CalculateHeight(),
+		SWP_NOREPOSITION | SWP_NOACTIVATE
+	);
+
 }
 
 bool SuggestionList::Create(HINSTANCE hInstance, HWND owner) {
@@ -88,6 +126,7 @@ bool SuggestionList::Create(HINSTANCE hInstance, HWND owner) {
 	);
 	if (!hwnd_) return false;
 	scaler_.Attach(hwnd_);
+	d2d_.Attach(hwnd_);
 
 	BOOL result = true;
 
@@ -102,29 +141,11 @@ bool SuggestionList::Create(HINSTANCE hInstance, HWND owner) {
 	return result;
  }
 
-void SuggestionList::PositionBelow(HWND hwnd) {
-	RECT rc{};
-	GetWindowRect(hwnd, &rc);
-	SetWindowPos(
-		hwnd_, nullptr,
-		rc.left, rc.bottom,
-		0, 0,
-		SWP_NOSIZE | SWP_NOACTIVATE
-	);
+void SuggestionList::Attach(HWND hwnd) {
+	attachedTo_ = hwnd;
 }
 
-void SuggestionList::ShowBelow(HWND hwnd) {
-	RECT rc{};
-	GetWindowRect(hwnd, &rc);
-	SetWindowPos(
-		hwnd_, nullptr,
-		rc.left, rc.bottom,
-		0, 0,
-		SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW
-	);
-}
-
-bool SuggestionList::UpdateSuggestions(const std::wstring& text, HWND hwnd) {
+bool SuggestionList::UpdateSuggestions(const std::wstring& text) {
 	visibleSuggestions_.clear();
 	if (text.length() == 0) return false;
 	for (const auto s : allSuggestions) {
@@ -132,20 +153,14 @@ bool SuggestionList::UpdateSuggestions(const std::wstring& text, HWND hwnd) {
 			visibleSuggestions_.push_back(s);
 		}
 	}
-	RECT rc{};
-	GetWindowRect(hwnd, &rc);
-	SetWindowPos(
-		hwnd_,
-		nullptr,
-		rc.left, rc.bottom, rc.right - rc.left, CalculateHeight(),
-		SWP_NOREPOSITION | SWP_NOACTIVATE
-	);
+
 	return !visibleSuggestions_.empty();
 }
 
 int SuggestionList::CalculateHeight() {
-	auto metrics = d2d_.FontMetrics();
-	const FLOAT lineHeight = (metrics.ascent + metrics.descent + metrics.lineGap)
-		* scaler_.ScaleFontSize(9.0) / metrics.designUnitsPerEm + scaler_.Scale(verticalPadding);
-	return visibleSuggestions_.size() * lineHeight;
+	const FLOAT lineHeight = LineHeightDips();
+	const FLOAT totalHeightDips = visibleSuggestions_.size() * lineHeight;
+	const FLOAT totalHeightPixels = scaler_.Scale(totalHeightDips);
+
+	return static_cast<int>(totalHeightPixels + 0.5);
 }

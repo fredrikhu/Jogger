@@ -82,6 +82,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_CREATE:
 		scaler_.Attach(hwnd_);
+		d2d_.Attach(hwnd_);
 		return CreateControls();
 	case WM_SIZE: {
 		const UINT width = LOWORD(lParam);
@@ -124,16 +125,16 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		}
 		if (LOWORD(wParam) == ID_EDIT && HIWORD(wParam) == EN_CHANGE) {
 			const auto query = GetText(edit_);
-			const bool shouldShow = suggestionList_.UpdateSuggestions(query, edit_);
+			const bool shouldShow = suggestionList_.UpdateSuggestions(query);
 			const bool isShowing = IsWindowVisible(suggestionList_.Window());
 			if (shouldShow && !isShowing) {
-				suggestionList_.ShowBelow(edit_);
+				suggestionList_.Show(SW_SHOWNOACTIVATE);
 			}
 			if (!shouldShow && isShowing) {
 				suggestionList_.Hide();
 			}
 			if (shouldShow) {
-				InvalidateRect(suggestionList_.Window(), nullptr, FALSE);
+				suggestionList_.Resize();
 			}
 			return 0;
 		}
@@ -141,7 +142,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_MOVE: {
 		const bool isShowing = IsWindowVisible(suggestionList_.Window());
 		if (isShowing) {
-			suggestionList_.PositionBelow(edit_);
+			suggestionList_.Reposition();
 		}
 		return 0;
 	}
@@ -228,6 +229,7 @@ HRESULT MainWindow::CreateControls() {
 	if (!browseButton_) return -1;
 	scaler_.SetScaledFont(browseButton_);
 	if (!suggestionList_.Create(hInstance_, hwnd_)) return -1;
+	suggestionList_.Attach(edit_);
 
 	return 0;
 }

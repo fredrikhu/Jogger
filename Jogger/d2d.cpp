@@ -7,8 +7,6 @@
 
 ComPtr<ID2D1Factory> D2D::factory_;
 ComPtr<IDWriteFactory> D2D::writeFactory_;
-ComPtr<IDWriteTextFormat> D2D::textFormat_;
-DWRITE_FONT_METRICS D2D::fontMetrics_;
 
 bool D2D::CreateD2DFactory() {
 	HRESULT hr = D2D1CreateFactory(
@@ -22,14 +20,21 @@ bool D2D::CreateD2DFactory() {
 		reinterpret_cast<IUnknown**>(writeFactory_.GetAddressOf())
 	);
 	if (FAILED(hr)) return false;
-	hr = writeFactory_->CreateTextFormat(
+	return true;
+}
+
+bool D2D::Attach(HWND hwnd) {
+	hwnd_ = hwnd;
+	CalculateDpi(GetDpiForWindow(hwnd));
+	SetWindowSubclass(hwnd_, &D2D::SubclassProc, SubclassId, reinterpret_cast<DWORD_PTR>(this));
+	HRESULT hr = writeFactory_->CreateTextFormat(
 		L"Segoe UI",                    // font family
 		nullptr,                        // font collection
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
 		DWRITE_FONT_STRETCH_NORMAL,
 		// TODO: Scaling
-		9.0f, // font size in DIPs
+		9.0f * 96.0f / 72.0f, // font size in DIPs
 		L"",                            // locale
 		textFormat_.GetAddressOf()
 	);
@@ -39,7 +44,7 @@ bool D2D::CreateD2DFactory() {
 	if (FAILED(hr)) return false;
 	UINT32 nameLength = textFormat_.Get()->GetFontFamilyNameLength();
 	std::wstring familyName(nameLength + 1, L'\0');
-	hr = textFormat_.Get()->GetFontFamilyName(familyName.data(), familyName.size());
+	hr = textFormat_.Get()->GetFontFamilyName(familyName.data(), static_cast<UINT32>(familyName.size()));
 	if (FAILED(hr)) return false;
 	UINT32 index;
 	BOOL exists;
@@ -60,8 +65,33 @@ bool D2D::CreateD2DFactory() {
 	font->CreateFontFace(&face);
 	if (FAILED(hr)) return false;
 	face->GetMetrics(&fontMetrics_);
-
 	return true;
+}
+
+void D2D::CalculateDpi(UINT dpi) {
+	if (dpi_ == dpi) return;
+	dpi_ = dpi;
+
+	if (renderTarget_)
+		renderTarget_->SetDpi(static_cast<FLOAT>(dpi), static_cast<FLOAT>(dpi));
+}
+
+LRESULT CALLBACK D2D::SubclassProc(
+	HWND hwnd,
+	UINT uMsg,
+	WPARAM wParam,
+	LPARAM lParam,
+	UINT_PTR,
+	DWORD_PTR refData
+) {
+	auto* self = reinterpret_cast<D2D*>(refData);
+
+	if (uMsg == WM_DPICHANGED)
+		self->CalculateDpi(HIWORD(wParam));
+	else if (uMsg == WM_SHOWWINDOW && wParam == TRUE)
+		self->CalculateDpi(GetDpiForWindow(hwnd));
+
+	return DefSubclassProc(hwnd, uMsg, wParam, lParam);
 }
 
 IDWriteTextFormat* D2D::TextFormat() {

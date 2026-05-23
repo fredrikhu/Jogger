@@ -12,8 +12,7 @@ class DpiScaler {
 public:
 	void Attach(HWND hwnd) {
 		hwnd_ = hwnd;
-		UINT d = GetDpiForWindow(hwnd_);
-		CalculateDpi(d);
+		CalculateDpi(GetDpiForWindow(hwnd_));
 		SetWindowSubclass(hwnd_, &DpiScaler::SubclassProc, SubclassId, reinterpret_cast<DWORD_PTR>(this));
 	}
 	~DpiScaler() {
@@ -38,6 +37,9 @@ public:
 	LONG Scale(LONG measurement) {
 		return static_cast<LONG>(measurement * scaleFactor_);
 	}
+	FLOAT Scale(FLOAT measurement) {
+		return measurement * scaleFactor_;
+	}
 	void SetScaledFont(HWND hwnd) {
 		SendMessage(hwnd, WM_SETFONT, (WPARAM)font_, TRUE);
 	}
@@ -55,6 +57,7 @@ private:
 
 	void CalculateDpi(UINT dpi) {
 		if (!hwnd_) return;
+		if (dpi_ == dpi) return;
 
 		dpi_ = dpi;
 		scaleFactor_ = dpi_ / DefaultDpi;
@@ -82,6 +85,8 @@ private:
 
 		if (uMsg == WM_DPICHANGED)
 			self->CalculateDpi(HIWORD(wParam));
+		else if (uMsg == WM_SHOWWINDOW && wParam == TRUE)
+			self->CalculateDpi(GetDpiForWindow(hwnd));
 
 		return DefSubclassProc(hwnd, uMsg, wParam, lParam);
 	}
