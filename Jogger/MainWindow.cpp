@@ -89,6 +89,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		const UINT height = HIWORD(lParam);
 		d2d_.ResizeRenderTarget(width, height);
 		ResizeControls();
+		suggestionList_.Reposition();
 		break;
 	}
 	case WM_CTLCOLORBTN:
