@@ -74,9 +74,23 @@ public:
 
 			self->hwnd_ = hwnd;
 		}
-		else {
+
+		if (!self) {
 			self = reinterpret_cast<Derived*>(
 				GetWindowLongPtrW(hwnd, GWLP_USERDATA)
+			);
+		}
+
+		if (msg == WM_DPICHANGED) {
+			// There is an edge case where DPI can change and the size does
+			// not. We will not handle this since it's to rare of an occurence.
+			const RECT* rc = reinterpret_cast<const RECT*>(lParam);
+			SetWindowPos(
+				hwnd,
+				nullptr,
+				rc->left, rc->top,
+				rc->right - rc->left, rc->bottom - rc->top,
+				SWP_NOZORDER | SWP_NOACTIVATE
 			);
 		}
 

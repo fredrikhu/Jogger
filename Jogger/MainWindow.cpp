@@ -1,7 +1,6 @@
 #include "MainWindow.h"
 #include "misc.h"
 #include "com.h"
-#include "DpiScaler.h"
 
 constexpr wchar_t CLASS_NAME[] = L"MainWindow";
 constexpr UINT_PTR ID_EXIT_AFTER_LAUNCH_TIMER = 1;
@@ -16,7 +15,25 @@ bool MainWindow::Create(HINSTANCE hInstance) {
 	const DWORD windowStyle = 0;
 	const DWORD windowExstyle = WS_EX_LAYERED;
 	const UINT dpi = GetDpiForSystem();
-	RECT rect = DpiScaler::Scale({ 0, 0, 320, 72 });
+
+	hwnd_ = CreateWindowExW(
+		windowExstyle,
+		CLASS_NAME,
+		L"Learn to Program Windows",
+		windowStyle,
+
+		CW_USEDEFAULT, CW_USEDEFAULT, 320, 72,
+
+		nullptr,
+		nullptr,
+		hInstance,
+		this
+	);
+	if (hwnd_ == nullptr) {
+		return false;
+	}
+
+	RECT rect = scaler_.Scale({ 0, 0, 320, 72 });
 	AdjustWindowRectExForDpi(
 		&rect,
 		windowStyle,
@@ -24,30 +41,20 @@ bool MainWindow::Create(HINSTANCE hInstance) {
 		0,
 		dpi
 	);
-
-	const HWND hwnd = CreateWindowExW(
-		windowExstyle,
-		CLASS_NAME,
-		L"Learn to Program Windows",
-		windowStyle,
-
-		CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top,
-
+	SetWindowPos(
+		hwnd_,
 		nullptr,
-		nullptr,
-		hInstance,
-		this
+		rect.left, rect.top,
+		rect.right - rect.left, rect.bottom - rect.top,
+		SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOREPOSITION
 	);
-	if (hwnd == nullptr) {
-		return false;
-	}
 
 	BOOL result = true;
 
-	result &= SetWindowLongW(hwnd, GWL_STYLE, windowStyle) != 0;
-	result &= SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+	result &= SetWindowLongW(hwnd_, GWL_STYLE, windowStyle) != 0;
+	result &= SetLayeredWindowAttributes(hwnd_, 0, 255, LWA_ALPHA);
 	result &= SetWindowPos(
-		hwnd,
+		hwnd_,
 		NULL,
 		0, 0, 0, 0,
 		SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
@@ -56,7 +63,8 @@ bool MainWindow::Create(HINSTANCE hInstance) {
 	return result;
 }
 
-bool MainWindow::Register(HINSTANCE hInstance) {
+// TODO: We should be able to move a lot of this to the base class?
+bool MainWindow::RegisterWindowClass(HINSTANCE hInstance) {
 	const WNDCLASSW wc = {
 		.lpfnWndProc = BaseWindow<MainWindow>::WindowProc,
 		.hInstance = hInstance,
@@ -67,17 +75,19 @@ bool MainWindow::Register(HINSTANCE hInstance) {
 		return false;
 	}
 
-	return SuggestionList::Register(hInstance);
+	return SuggestionList::RegisterWindowClass(hInstance);
 }
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_CREATE:
+		scaler_.Attach(hwnd_);
 		return CreateControls();
 	case WM_SIZE: {
 		const UINT width = LOWORD(lParam);
 		const UINT height = HIWORD(lParam);
 		d2d_.ResizeRenderTarget(width, height);
+		ResizeControls();
 		break;
 	}
 	case WM_PAINT:
@@ -161,8 +171,11 @@ bool MainWindow::HandleMessage(MSG& msg) {
 	return false;
 }
 
+const RECT editRect{ 10, 10, 300, 24 };
+const RECT okButtonRect{ 260, 39, 50, 28 };
+const RECT browseButtonRect{ 155, 39, 100, 28 };
 HRESULT MainWindow::CreateControls() {
-	RECT rect = DpiScaler::Scale({10, 10, 300, 24});
+	RECT rect = scaler_.Scale(editRect);
 	edit_ = CreateWindowExW(
 		0,
 		L"EDIT",
@@ -176,8 +189,8 @@ HRESULT MainWindow::CreateControls() {
 	);
 	if (!edit_) return -1;
 	SetFocus(edit_);
-	DpiScaler::SetScaledFont(edit_);
-	rect = DpiScaler::Scale({ 260, 39, 50, 28 });
+	scaler_.SetScaledFont(edit_);
+	rect = scaler_.Scale(okButtonRect);
 	okButton_ = CreateWindowEx(
 		0,
 		L"BUTTON",
@@ -190,8 +203,8 @@ HRESULT MainWindow::CreateControls() {
 		nullptr
 	);
 	if (!okButton_) return -1;
-	DpiScaler::SetScaledFont(okButton_);
-	rect = DpiScaler::Scale({ 155, 39, 100, 28 });
+	scaler_.SetScaledFont(okButton_);
+	rect = scaler_.Scale(browseButtonRect);
 	browseButton_ = CreateWindowEx(
 		0,
 		L"BUTTON",
@@ -204,12 +217,24 @@ HRESULT MainWindow::CreateControls() {
 		nullptr
 	);
 	if (!browseButton_) return -1;
-	DpiScaler::SetScaledFont(browseButton_);
+	scaler_.SetScaledFont(browseButton_);
 	if (!suggestionList_.Create(hInstance_, hwnd_)) return -1;
 
 	return 0;
 }
 
+void MainWindow::ResizeControls() {
+	RECT rect = scaler_.Scale(editRect);
+	SetWindowPos(edit_, nullptr, rect.left, rect.top, rect.right, rect.bottom, SWP_NONE);
+	scaler_.SetScaledFont(edit_);
+	rect = scaler_.Scale(okButtonRect);
+	SetWindowPos(okButton_, nullptr, rect.left, rect.top, rect.right, rect.bottom, SWP_NONE);
+	scaler_.SetScaledFont(okButton_);
+	rect = scaler_.Scale(browseButtonRect);
+	SetWindowPos(browseButton_, nullptr, rect.left, rect.top, rect.right, rect.bottom, SWP_NONE);
+	scaler_.SetScaledFont(browseButton_);
+	InvalidateRect(hwnd_, nullptr, FALSE);
+}
 
 void MainWindow::OnPaint() {
 	auto pss = BeginPaint();

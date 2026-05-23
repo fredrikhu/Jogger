@@ -1,5 +1,4 @@
 #include "SuggestionList.h"
-#include "DpiScaler.h"
 
 constexpr wchar_t SUGGESTION_LIST_CLASS[] = L"SuggestionList";
 const FLOAT SuggestionList::verticalPadding = 4.0f;
@@ -10,7 +9,7 @@ std::vector<std::wstring> allSuggestions{
 	L"explorer"
 };
 
-bool SuggestionList::Register(HINSTANCE hInstance) {
+bool SuggestionList::RegisterWindowClass(HINSTANCE hInstance) {
 	const WNDCLASSW suggestionClass = {
 	.lpfnWndProc = BaseWindow<SuggestionList>::WindowProc,
 	.hInstance = hInstance,
@@ -55,7 +54,7 @@ void SuggestionList::OnPaint() {
 	for (auto& s : visibleSuggestions_) {
 		auto metrics = d2d_.FontMetrics();
 		const FLOAT lineHeight = (metrics.ascent + metrics.descent + metrics.lineGap)
-			* DpiScaler::ScaleFontSize(9.0) / metrics.designUnitsPerEm + DpiScaler::Scale(verticalPadding);
+			* scaler_.ScaleFontSize(9.0f) / metrics.designUnitsPerEm + scaler_.Scale(verticalPadding);
 		const FLOAT pos = lineHeight * (offset++);
 		D2D1_RECT_F rect{
 			.left = 8,
@@ -88,6 +87,7 @@ bool SuggestionList::Create(HINSTANCE hInstance, HWND owner) {
 		this
 	);
 	if (!hwnd_) return false;
+	scaler_.Attach(hwnd_);
 
 	BOOL result = true;
 
@@ -146,6 +146,6 @@ bool SuggestionList::UpdateSuggestions(const std::wstring& text, HWND hwnd) {
 int SuggestionList::CalculateHeight() {
 	auto metrics = d2d_.FontMetrics();
 	const FLOAT lineHeight = (metrics.ascent + metrics.descent + metrics.lineGap)
-		* DpiScaler::ScaleFontSize(9.0) / metrics.designUnitsPerEm + DpiScaler::Scale(verticalPadding);
+		* scaler_.ScaleFontSize(9.0) / metrics.designUnitsPerEm + scaler_.Scale(verticalPadding);
 	return visibleSuggestions_.size() * lineHeight;
 }

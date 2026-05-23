@@ -28,7 +28,8 @@ bool D2D::CreateD2DFactory() {
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
 		DWRITE_FONT_STRETCH_NORMAL,
-		DpiScaler::ScaleFontSize(9.0f), // font size in DIPs
+		// TODO: Scaling
+		9.0f, // font size in DIPs
 		L"",                            // locale
 		textFormat_.GetAddressOf()
 	);
