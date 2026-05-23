@@ -32,7 +32,7 @@ D2D::~D2D() {
 bool D2D::Attach(HWND hwnd) {
 	hwnd_ = hwnd;
 	CalculateDpi(GetDpiForWindow(hwnd));
-	SetWindowSubclass(hwnd_, &D2D::SubclassProc, SubclassId, reinterpret_cast<DWORD_PTR>(this));
+	if (!SetWindowSubclass(hwnd_, &D2D::SubclassProc, SubclassId, reinterpret_cast<DWORD_PTR>(this))) return false;
 	HRESULT hr = writeFactory_->CreateTextFormat(
 		L"Segoe UI",                    // font family
 		nullptr,                        // font collection
