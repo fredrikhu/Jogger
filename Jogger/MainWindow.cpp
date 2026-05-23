@@ -178,6 +178,20 @@ bool MainWindow::HandleMessage(MSG& msg) {
 		DestroyWindow(hwnd_);
 		return true;
 	}
+	if (msg.message == WM_KEYDOWN && msg.hwnd == edit_
+		&& msg.wParam == VK_BACK && (GetKeyState(VK_CONTROL) & 0x8000)) {
+		DWORD start, end;
+		SendMessageW(edit_, EM_GETSEL, (WPARAM)&start, (LPARAM)&end);
+		if (start == end && start > 0) {
+			auto text = GetText(edit_);
+			int pos = static_cast<int>(start) - 1;
+			while (pos > 0 && !iswalnum(text[pos - 1])) pos--;
+			while (pos > 0 && iswalnum(text[pos - 1])) pos--;
+			SendMessageW(edit_, EM_SETSEL, pos, start);
+		}
+		SendMessageW(edit_, WM_CLEAR, 0, 0);
+		return true;
+	}
 	if (IsDialogMessageW(hwnd_, &msg)) {
 		return true;
 	}
