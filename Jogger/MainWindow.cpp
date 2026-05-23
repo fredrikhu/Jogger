@@ -90,6 +90,15 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		ResizeControls();
 		break;
 	}
+	case WM_CTLCOLORBTN:
+		if (!backgroundBrush_) {
+			backgroundBrush_ = CreateSolidBrush(RGB(
+				backgroundColor_.r,
+				backgroundColor_.g,
+				backgroundColor_.b
+			));
+		}
+		return reinterpret_cast<LRESULT>(backgroundBrush_);
 	case WM_PAINT:
 		OnPaint();
 		return 0;
@@ -241,7 +250,7 @@ void MainWindow::OnPaint() {
 	ID2D1HwndRenderTarget* t;
 	if (!(t = pss.RenderTarget())) return;
 
-	t->Clear(D2D1::ColorF(D2D1::ColorF(0.118f, 0.118f, 0.118f)));
+	t->Clear(backgroundColor_);
 	auto size = t->GetSize();
 	t->DrawRectangle(
 		D2D1::RectF(0.5, 0.5, size.width - 0.5f, size.height - 0.5f),
