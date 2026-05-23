@@ -125,8 +125,8 @@ bool SuggestionList::Create(HINSTANCE hInstance, HWND owner) {
 		this
 	);
 	if (!hwnd_) return false;
-	scaler_.Attach(hwnd_);
-	d2d_.Attach(hwnd_);
+	if (!scaler_.Attach(hwnd_)) return false;
+	if (!d2d_.Attach(hwnd_)) return false;
 
 	BOOL result = true;
 

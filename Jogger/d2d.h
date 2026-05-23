@@ -15,6 +15,7 @@ public:
 	HRESULT EnsureRenderTarget(HWND hwnd);
 	void ResizeRenderTarget(UINT width, UINT height);
 	bool Attach(HWND hwnd);
+	~D2D();
 
 	static ComPtr<ID2D1Factory> Factory();
 	IDWriteTextFormat* TextFormat();

@@ -23,6 +23,10 @@ bool D2D::CreateD2DFactory() {
 	return true;
 }
 
+D2D::~D2D() {
+	RemoveWindowSubclass(hwnd_, D2D::SubclassProc, SubclassId);
+}
+
 bool D2D::Attach(HWND hwnd) {
 	hwnd_ = hwnd;
 	CalculateDpi(GetDpiForWindow(hwnd));
@@ -33,14 +37,13 @@ bool D2D::Attach(HWND hwnd) {
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
 		DWRITE_FONT_STRETCH_NORMAL,
-		// TODO: Scaling
 		9.0f * 96.0f / 72.0f, // font size in DIPs
 		L"",                            // locale
 		textFormat_.GetAddressOf()
 	);
 	if (FAILED(hr)) return false;
-	IDWriteFontCollection* fontCollection;
-	hr = writeFactory_->GetSystemFontCollection(&fontCollection);
+	ComPtr<IDWriteFontCollection> fontCollection;
+	hr = writeFactory_->GetSystemFontCollection(fontCollection.GetAddressOf());
 	if (FAILED(hr)) return false;
 	UINT32 nameLength = textFormat_.Get()->GetFontFamilyNameLength();
 	std::wstring familyName(nameLength + 1, L'\0');
@@ -50,19 +53,19 @@ bool D2D::Attach(HWND hwnd) {
 	BOOL exists;
 	hr = fontCollection->FindFamilyName(familyName.c_str(), &index, &exists);
 	if (FAILED(hr) || !exists) return false;
-	IDWriteFontFamily* fontFamily;
-	fontCollection->GetFontFamily(index, &fontFamily);
+	ComPtr<IDWriteFontFamily> fontFamily;
+	hr = fontCollection->GetFontFamily(index, fontFamily.GetAddressOf());
 	if (FAILED(hr)) return false;
-	IDWriteFont* font;
+	ComPtr<IDWriteFont> font;
 	hr = fontFamily->GetFirstMatchingFont(
 		DWRITE_FONT_WEIGHT_NORMAL,
 		DWRITE_FONT_STRETCH_NORMAL,
 		DWRITE_FONT_STYLE_NORMAL,
-		&font
+		font.GetAddressOf()
 	);
 	if (FAILED(hr)) return false;
 	ComPtr<IDWriteFontFace> face;
-	font->CreateFontFace(&face);
+	hr = font->CreateFontFace(&face);
 	if (FAILED(hr)) return false;
 	face->GetMetrics(&fontMetrics_);
 	return true;

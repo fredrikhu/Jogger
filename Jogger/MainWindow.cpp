@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "misc.h"
 #include "com.h"
+#include "Rect.h"
 
 constexpr wchar_t CLASS_NAME[] = L"MainWindow";
 constexpr UINT_PTR ID_EXIT_AFTER_LAUNCH_TIMER = 1;
@@ -33,7 +34,7 @@ bool MainWindow::Create(HINSTANCE hInstance) {
 		return false;
 	}
 
-	RECT rect = scaler_.Scale({ 0, 0, 320, 72 });
+	RECT rect = scaler_.Scale(RECT { 0, 0, 320, 72 });
 	AdjustWindowRectExForDpi(
 		&rect,
 		windowStyle,
@@ -156,6 +157,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		break;
 	case WM_DESTROY:
 		suggestionList_.Destroy();
+		DeleteObject(backgroundBrush_);
 		PostQuitMessage(0);
 		return 0;
 	}
@@ -182,17 +184,17 @@ bool MainWindow::HandleMessage(MSG& msg) {
 	return false;
 }
 
-const RECT editRect{ 10, 10, 300, 24 };
-const RECT okButtonRect{ 260, 39, 50, 28 };
-const RECT browseButtonRect{ 155, 39, 100, 28 };
+const Rect editRect{ 10, 10, 300, 24 };
+const Rect okButtonRect{ 260, 39, 50, 28 };
+const Rect browseButtonRect{ 155, 39, 100, 28 };
 HRESULT MainWindow::CreateControls() {
-	RECT rect = scaler_.Scale(editRect);
+	Rect rect = scaler_.Scale(editRect);
 	edit_ = CreateWindowExW(
 		0,
 		L"EDIT",
 		L"",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER | ES_AUTOHSCROLL,
-		rect.left, rect.top, rect.right, rect.bottom,
+		rect.left, rect.top, rect.width, rect.height,
 		hwnd_,
 		ControlId(ID_EDIT),
 		hInstance_,
@@ -207,7 +209,7 @@ HRESULT MainWindow::CreateControls() {
 		L"BUTTON",
 		L"Ok",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
-		rect.left, rect.top, rect.right, rect.bottom,
+		rect.left, rect.top, rect.width, rect.height,
 		hwnd_,
 		ControlId(ID_OK),
 		hInstance_,
@@ -221,7 +223,7 @@ HRESULT MainWindow::CreateControls() {
 		L"BUTTON",
 		L"Browse...",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP,
-		rect.left, rect.top, rect.right, rect.bottom,
+		rect.left, rect.top, rect.width, rect.height,
 		hwnd_,
 		ControlId(ID_BROWSE),
 		hInstance_,
@@ -236,14 +238,14 @@ HRESULT MainWindow::CreateControls() {
 }
 
 void MainWindow::ResizeControls() {
-	RECT rect = scaler_.Scale(editRect);
-	SetWindowPos(edit_, nullptr, rect.left, rect.top, rect.right, rect.bottom, SWP_NONE);
+	Rect rect = scaler_.Scale(editRect);
+	SetWindowPos(edit_, nullptr, rect.left, rect.top, rect.width, rect.height, SWP_NONE);
 	scaler_.SetScaledFont(edit_);
 	rect = scaler_.Scale(okButtonRect);
-	SetWindowPos(okButton_, nullptr, rect.left, rect.top, rect.right, rect.bottom, SWP_NONE);
+	SetWindowPos(okButton_, nullptr, rect.left, rect.top, rect.width, rect.height, SWP_NONE);
 	scaler_.SetScaledFont(okButton_);
 	rect = scaler_.Scale(browseButtonRect);
-	SetWindowPos(browseButton_, nullptr, rect.left, rect.top, rect.right, rect.bottom, SWP_NONE);
+	SetWindowPos(browseButton_, nullptr, rect.left, rect.top, rect.width, rect.height, SWP_NONE);
 	scaler_.SetScaledFont(browseButton_);
 	InvalidateRect(hwnd_, nullptr, FALSE);
 }

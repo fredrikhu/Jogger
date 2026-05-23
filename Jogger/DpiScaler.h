@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <commctrl.h>
+#include "Rect.h"
 
 #pragma comment(lib, "Comctl32.lib")
 #pragma comment(linker, "\"/manifestdependency:type='win32' \
@@ -10,10 +11,10 @@ language='*'\"")
 
 class DpiScaler {
 public:
-	void Attach(HWND hwnd) {
+	bool Attach(HWND hwnd) {
 		hwnd_ = hwnd;
-		CalculateDpi(GetDpiForWindow(hwnd_));
-		SetWindowSubclass(hwnd_, &DpiScaler::SubclassProc, SubclassId, reinterpret_cast<DWORD_PTR>(this));
+		if (!CalculateDpi(GetDpiForWindow(hwnd_))) return false;
+		return SetWindowSubclass(hwnd_, &DpiScaler::SubclassProc, SubclassId, reinterpret_cast<DWORD_PTR>(this));
 	}
 	~DpiScaler() {
 		if (hwnd_) {
@@ -34,6 +35,15 @@ public:
 		};
 		return result;
 	}
+	Rect Scale(Rect rect) {
+		Rect result = {
+			.left = Scale(rect.left),
+			.top = Scale(rect.top),
+			.width = Scale(rect.width),
+			.height = Scale(rect.height)
+		};
+		return result;
+	}
 	LONG Scale(LONG measurement) {
 		return static_cast<LONG>(measurement * scaleFactor_);
 	}
@@ -51,26 +61,30 @@ private:
 	static const FLOAT TextDpi;
 	static const FLOAT DefaultDpi;
 	HWND hwnd_ = nullptr;
-	UINT dpi_;
-	float scaleFactor_;
+	UINT dpi_{};
+	float scaleFactor_{};
 	HFONT font_ = nullptr;
 
-	void CalculateDpi(UINT dpi) {
-		if (!hwnd_) return;
-		if (dpi_ == dpi) return;
+	bool CalculateDpi(UINT dpi) {
+		if (!hwnd_) return true;
+		if (dpi_ == dpi) return true;
 
 		dpi_ = dpi;
 		scaleFactor_ = dpi_ / DefaultDpi;
 		int fontPointSize_ = -static_cast<int>(ScaleFontSize(9.0f));
 		if (font_) {
-			DeleteObject(font_);
+			auto font = font_;
 			font_ = nullptr;
+
+			if (!DeleteObject(font)) return false;
 		}
+
 		font_ = CreateFontW(
 			fontPointSize_, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
 			DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 			CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI"
 		);
+		return font_ != nullptr;
 	}
 
 	static LRESULT CALLBACK SubclassProc(
