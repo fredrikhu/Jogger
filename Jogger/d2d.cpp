@@ -24,6 +24,8 @@ bool D2D::CreateD2DFactory() {
 }
 
 D2D::~D2D() {
+	if (!hwnd_) return;
+
 	RemoveWindowSubclass(hwnd_, D2D::SubclassProc, SubclassId);
 }
 

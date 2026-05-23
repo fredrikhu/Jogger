@@ -82,8 +82,8 @@ bool MainWindow::RegisterWindowClass(HINSTANCE hInstance) {
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_CREATE:
-		scaler_.Attach(hwnd_);
-		d2d_.Attach(hwnd_);
+		if (!scaler_.Attach(hwnd_)) return -1;
+		if (!d2d_.Attach(hwnd_)) return -1;
 		return CreateControls();
 	case WM_SIZE: {
 		const UINT width = LOWORD(lParam);
@@ -96,9 +96,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_CTLCOLORBTN:
 		if (!backgroundBrush_) {
 			backgroundBrush_ = CreateSolidBrush(RGB(
-				backgroundColor_.r,
-				backgroundColor_.g,
-				backgroundColor_.b
+				backgroundColor_.r * 255,
+				backgroundColor_.g * 255,
+				backgroundColor_.b * 255
 			));
 		}
 		return reinterpret_cast<LRESULT>(backgroundBrush_);

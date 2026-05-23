@@ -39,8 +39,10 @@ LRESULT SuggestionList::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		return 0;
 	}
 	case WM_SHOWWINDOW:
-		Reposition();
-		Resize();
+		if (wParam) {
+			Reposition();
+			Resize();
+		}
 		break;
 	}
 	return DefWindowProcW(hwnd_, uMsg, wParam, lParam);
