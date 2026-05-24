@@ -24,6 +24,7 @@ private:
 	HWND browseButton_ = nullptr;
 
 	HRESULT CreateControls();
+	void CreateBackgroundBrush();
 	void OnPaint();
 	void UpdateSuggestions(const std::wstring& text);
 	void ResizeControls();

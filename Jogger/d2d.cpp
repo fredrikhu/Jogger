@@ -120,7 +120,10 @@ D2D1_COLOR_F GetAccentColorF() {
 }
 
 HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
-	if (renderTarget_.Get()) return S_OK;
+	if (renderTarget_.Get()) {
+		renderTarget_->SetDpi(static_cast<FLOAT>(dpi_), static_cast<FLOAT>(dpi_));
+		return S_OK;
+	}
 
 	RECT rc;
 	GetClientRect(hwnd, &rc);
@@ -131,9 +134,10 @@ HRESULT D2D::EnsureRenderTarget(HWND hwnd) {
 			hwnd,
 			D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top)
 		),
-		&renderTarget_
+		renderTarget_.GetAddressOf()
 	);
 	if (FAILED(hr)) return hr;
+	renderTarget_->SetDpi(static_cast<FLOAT>(dpi_), static_cast<FLOAT>(dpi_));
 
 	// TODO: Recreate when accent color changes (WM_DWMCOLORIZATIONCOLORCHANGED)
 	hr = renderTarget_.Get()->CreateSolidColorBrush(

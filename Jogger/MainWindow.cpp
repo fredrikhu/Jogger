@@ -94,14 +94,18 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		break;
 	}
 	case WM_CTLCOLORBTN:
-		if (!backgroundBrush_) {
-			backgroundBrush_ = CreateSolidBrush(RGB(
-				backgroundColor_.r * 255,
-				backgroundColor_.g * 255,
-				backgroundColor_.b * 255
-			));
-		}
+		CreateBackgroundBrush();
 		return reinterpret_cast<LRESULT>(backgroundBrush_);
+	case WM_CTLCOLOREDIT:
+		SetTextColor((HDC)wParam, RGB(240, 240, 240));
+		SetBkColor((HDC)wParam, RGB(
+			backgroundColor_.r * 255,
+			backgroundColor_.g * 255,
+			backgroundColor_.b * 255
+		));
+		SetBkMode((HDC)wParam, OPAQUE);
+		CreateBackgroundBrush();
+		return (LRESULT)backgroundBrush_;
 	case WM_PAINT:
 		OnPaint();
 		return 0;
@@ -164,6 +168,16 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	return DefWindowProcW(hwnd_, uMsg, wParam, lParam);
 }
 
+void MainWindow::CreateBackgroundBrush() {
+	if (!backgroundBrush_) {
+		backgroundBrush_ = CreateSolidBrush(RGB(
+			backgroundColor_.r * 255,
+			backgroundColor_.g * 255,
+			backgroundColor_.b * 255
+		));
+	}
+}
+
 bool MainWindow::HandleMessage(MSG& msg) {
 	if (msg.message == WM_KEYDOWN && msg.wParam == VK_RETURN && (msg.hwnd == edit_)) {
 		SendMessageW(
@@ -198,7 +212,7 @@ bool MainWindow::HandleMessage(MSG& msg) {
 	return false;
 }
 
-const Rect editRect{ 10, 10, 300, 24 };
+const Rect editRect{ 10, 10, 300, 20 };
 const Rect okButtonRect{ 260, 39, 50, 28 };
 const Rect browseButtonRect{ 155, 39, 100, 28 };
 HRESULT MainWindow::CreateControls() {
@@ -207,7 +221,7 @@ HRESULT MainWindow::CreateControls() {
 		0,
 		L"EDIT",
 		L"",
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER | ES_AUTOHSCROLL,
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL,
 		rect.left, rect.top, rect.width, rect.height,
 		hwnd_,
 		ControlId(ID_EDIT),
@@ -273,6 +287,22 @@ void MainWindow::OnPaint() {
 	auto size = t->GetSize();
 	t->DrawRectangle(
 		D2D1::RectF(0.5, 0.5, size.width - 0.5f, size.height - 0.5f),
+		d2d_.AccentBrush().Get()
+	);
+
+	RECT rc{};
+	RECT rcWin{};
+	GetWindowRect(edit_, &rc);
+	GetWindowRect(hwnd_, &rcWin);
+	D2D1_RECT_F rcf = {
+		.left = static_cast<FLOAT>(rc.left - rcWin.left),
+		.top = static_cast<FLOAT>(rc.top - rcWin.top),
+		.right = static_cast<FLOAT>(rc.right - rcWin.left),
+		.bottom = static_cast<FLOAT>(rc.bottom - rcWin.top),
+	};
+	rcf = scaler_.Descale(rcf);
+	t->DrawRectangle(
+		rcf,
 		d2d_.AccentBrush().Get()
 	);
 }

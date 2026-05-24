@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <commctrl.h>
 #include "Rect.h"
+#include <d2d1.h>
 
 #pragma comment(lib, "Comctl32.lib")
 #pragma comment(linker, "\"/manifestdependency:type='win32' \
@@ -44,11 +45,22 @@ public:
 		};
 		return result;
 	}
+	D2D1_RECT_F Descale(D2D1_RECT_F rect) {
+		return D2D1_RECT_F {
+			.left = Descale(rect.left),
+			.top = Descale(rect.top),
+			.right = Descale(rect.right),
+			.bottom = Descale(rect.bottom)
+		};
+	}
 	LONG Scale(LONG measurement) {
 		return static_cast<LONG>(measurement * scaleFactor_);
 	}
 	FLOAT Scale(FLOAT measurement) {
 		return measurement * scaleFactor_;
+	}
+	FLOAT Descale(FLOAT measurement) {
+		return measurement / scaleFactor_;
 	}
 	void SetScaledFont(HWND hwnd) {
 		SendMessage(hwnd, WM_SETFONT, (WPARAM)font_, TRUE);

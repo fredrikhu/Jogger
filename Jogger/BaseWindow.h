@@ -16,6 +16,7 @@ public:
 			HRESULT hr = renderTarget_->EndDraw();
 			if (hr == D2DERR_RECREATE_TARGET) {
 				d2d_.ResetRenderTarget();
+				InvalidateRect(hwnd_, nullptr, FALSE);
 			}
 		}
 		::EndPaint(hwnd_, &ps);
